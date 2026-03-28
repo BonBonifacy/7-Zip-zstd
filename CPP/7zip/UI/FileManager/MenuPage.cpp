@@ -254,7 +254,6 @@ bool CMenuPage::OnInit()
 
     switch (menuItem.ControlID)
     {
-      case IDS_CONTEXT_SMART_EXTRACT:
       case IDS_CONTEXT_EXTRACT_TO:
       {
         s = MyFormatNew(s, LangString(IDS_CONTEXT_FOLDER));
