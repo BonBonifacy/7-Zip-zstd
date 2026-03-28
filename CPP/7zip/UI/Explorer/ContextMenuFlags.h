@@ -22,6 +22,7 @@ namespace NContextMenuFlags
 
   const UInt32 kCRC_Cascaded = (UInt32)1 << 30;
   const UInt32 kCRC = (UInt32)1 << 31;
+  const UInt32 kSmartExtract = (1 << 20);
 }
 
 #endif

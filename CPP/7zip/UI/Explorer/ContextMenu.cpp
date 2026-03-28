@@ -887,7 +887,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
           Set_UserString_in_LastCommand(s);
           MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
         }
-        if ((contextMenuFlags & NContextMenuFlags::kExtractTo) != 0)
+        if ((contextMenuFlags & NContextMenuFlags::kSmartExtract) != 0)
         {
           CCommandMapItem cmi;
           UString s;
