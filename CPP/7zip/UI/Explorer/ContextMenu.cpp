@@ -274,6 +274,7 @@ static const CContextMenuCommand g_Commands[] =
   CMD_REC( kExtract,     "Extract",     IDS_CONTEXT_EXTRACT),
   CMD_REC( kExtractHere, "ExtractHere", IDS_CONTEXT_EXTRACT_HERE),
   CMD_REC( kExtractTo,   "ExtractTo",   IDS_CONTEXT_EXTRACT_TO),
+  CMD_REC( kSmartExtract, "SmartExtract", IDS_CONTEXT_EXTRACT_TO),
   CMD_REC( kTest,        "Test",        IDS_CONTEXT_TEST),
   CMD_REC( kCompress,           "Compress",           IDS_CONTEXT_COMPRESS),
   CMD_REC( kCompressEmail,      "CompressEmail",      IDS_CONTEXT_COMPRESS_EMAIL),
@@ -327,6 +328,15 @@ static int FindCommand(CZipContextMenu::enum_CommandInternalID &id)
 void CZipContextMenu::FillCommand(enum_CommandInternalID id, UString &mainString, CCommandMapItem &cmi) const
 {
   mainString.Empty();
+  if (id == kSmartExtract)
+  {
+    cmi.CommandInternalID = id;
+    cmi.Verb = kMainVerb;
+    cmi.Verb += "SmartExtract";
+    mainString = L"Smart extract";
+    cmi.UserString = mainString;
+    return;
+  }
   const int i = FindCommand(id);
   if (i < 0)
     throw 201908;
@@ -877,6 +887,14 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
           Set_UserString_in_LastCommand(s);
           MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
         }
+        if ((contextMenuFlags & NContextMenuFlags::kExtractTo) != 0)
+        {
+          CCommandMapItem cmi;
+          UString s;
+          cmi.Folder = baseFolder + specFolder; // 和 ExtractTo 目标保持一致
+          AddCommand(kSmartExtract, s, cmi);
+          MyInsertMenu(popupMenu, subIndex++, currentCommandID++, s, bitmap);
+        }
       }
 
       if ((contextMenuFlags & NContextMenuFlags::kTest) != 0)
@@ -1288,17 +1306,20 @@ HRESULT CZipContextMenu::InvokeCommandCommon(const CCommandMapItem &cmi)
       case kExtract:
       case kExtractHere:
       case kExtractTo:
+      case kSmartExtract:
       {
         if (_attribs.FirstDirIndex != -1)
         {
           ShowErrorMessageRes(IDS_SELECT_FILES);
           break;
         }
-        ExtractArchives(_fileNames, cmi.Folder,
-            (cmdID == kExtract), // showDialog
-            (cmdID == kExtractTo) && _elimDup.Val, // elimDup
-            _writeZone
-            );
+
+        const bool showDialog = (cmdID == kExtract);
+        const bool elimDup =
+            ((cmdID == kExtractTo) && _elimDup.Val) ||
+            (cmdID == kSmartExtract);
+
+        ExtractArchives(_fileNames, cmi.Folder, showDialog, elimDup, _writeZone);
         break;
       }
       case kTest:
