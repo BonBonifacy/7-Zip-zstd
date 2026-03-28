@@ -333,7 +333,7 @@ void CZipContextMenu::FillCommand(enum_CommandInternalID id, UString &mainString
     cmi.CommandInternalID = id;
     cmi.Verb = kMainVerb;
     cmi.Verb += "SmartExtract";
-    mainString = L"Smart extract";
+    LangString(IDS_CONTEXT_SMART_EXTRACT, mainString);
     cmi.UserString = mainString;
     return;
   }
