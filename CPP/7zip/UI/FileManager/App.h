@@ -126,6 +126,10 @@ public:
   void CopyTo() { OnCopy(false, false, GetFocusedPanelIndex()); }
   void MoveTo() { OnCopy(true, false, GetFocusedPanelIndex()); }
   void Delete(bool toRecycleBin) { GetFocusedPanel().DeleteItems(toRecycleBin); }
+  void CopyNames() { GetFocusedPanel().CopyNames(); }
+  void CopyPaths() { GetFocusedPanel().CopyPaths(); }
+  void CopyArcPath() { GetFocusedPanel().CopyArcPath(); }
+  void OpenArcFolder() { GetFocusedPanel().OpenArcFolder(); }
   HRESULT CalculateCrc2(const UString &methodName);
   void CalculateCrc(const char *methodName);
 

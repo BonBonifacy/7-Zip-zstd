@@ -524,7 +524,7 @@ void CPanel::OpenArcFolder()
     if (!customExplorer.IsEmpty())
     {
       NWindows::NProcess::CProcess process;
-      UString params = NWindows::NFile::NName::GetQuotedString(dir);
+      UString params = GetQuotedString(dir);
       process.Create(customExplorer, params, NULL);
     }
     else
