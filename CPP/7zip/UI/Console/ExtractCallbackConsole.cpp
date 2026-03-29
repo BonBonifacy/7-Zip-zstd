@@ -884,6 +884,11 @@ HRESULT CExtractCallbackConsole::ThereAreNoFiles()
   return CheckBreak2();
 }
 
+HRESULT CExtractCallbackConsole::CheckOutputFolderCollision(FString &)
+{
+  return S_OK;
+}
+
 HRESULT CExtractCallbackConsole::ExtractResult(HRESULT result)
 {
   MT_LOCK

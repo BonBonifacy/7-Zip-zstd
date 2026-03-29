@@ -184,7 +184,7 @@ static HRESULT DecompressArchive(
   */
   else
   {
-    RINOK(extractCallback->CheckOutputFolderCollision(outDir));
+    RINOK(callback->CheckOutputFolderCollision(outDir));
     if (!CreateComplexDir(outDir))
     {
       const HRESULT res = GetLastError_noZero_HRESULT();

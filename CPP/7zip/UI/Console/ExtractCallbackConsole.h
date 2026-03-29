@@ -115,7 +115,6 @@ class CExtractCallbackConsole Z7_final:
   Z7_IFACE_COM7_IMP(IProgress)
   Z7_IFACE_COM7_IMP(IFolderArchiveExtractCallback)
   Z7_IFACE_IMP(IExtractCallbackUI)
-  virtual HRESULT CheckOutputFolderCollision(FString &) Z7_override { return S_OK; }
   // Z7_IFACE_COM7_IMP(IArchiveExtractCallbackMessage)
   Z7_IFACE_COM7_IMP(IFolderArchiveExtractCallback2)
  #ifndef Z7_NO_CRYPTO
