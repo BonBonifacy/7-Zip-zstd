@@ -444,21 +444,21 @@ void CPanel::EditCopy()
 
 void CPanel::CopyNames()
 {
-  UString s;
+  UString resultString;
   CRecordVector<UInt32> indices;
   Get_ItemIndices_OperSmart(indices);
   FOR_VECTOR (i, indices)
   {
     if (i != 0)
-      s += L"\r\n";
-    s += GetItemName(indices[i]);
+      resultString += L"\r\n";
+    resultString += GetItemName(indices[i]);
   }
-  ClipboardSetText(_mainWindow, s);
+  ClipboardSetText(_mainWindow, resultString);
 }
 
 void CPanel::CopyPaths()
 {
-  UString s;
+  UString resultString;
   CRecordVector<UInt32> indices;
   Get_ItemIndices_OperSmart(indices);
   
@@ -467,37 +467,33 @@ void CPanel::CopyPaths()
   
   if (IsArcFolder() && !_parentFolders.IsEmpty())
   {
-    // Path inside the archive is (Full Path) - (Physical Archive Path)
     const CFolderLink &rootArc = _parentFolders[0];
     UString rootArcPath = rootArc.ParentFolderPath + rootArc.RelPath;
     skipLen = rootArcPath.Len();
-    // Skip the backslash after the archive name if it exists
     if (_currentFolderPrefix.Len() > skipLen && IS_PATH_SEPAR(_currentFolderPrefix[skipLen]))
       skipLen++;
   }
   else
   {
-    // Not in an archive, use normal filesystem prefix
     prefix = GetFsPath();
   }
     
   FOR_VECTOR (i, indices)
   {
     if (i != 0)
-      s += L"\r\n";
+      resultString += L"\r\n";
     
     if (skipLen > 0)
     {
-       // In Archive mode: Prefix is the part of _currentFolderPrefix after the archive file
-       s += _currentFolderPrefix.Ptr(skipLen);
+       resultString += _currentFolderPrefix.Ptr(skipLen);
     }
     else
     {
-       s += prefix;
+       resultString += prefix;
     }
-    s += GetItemRelPath(indices[i]);
+    resultString += GetItemRelPath(indices[i]);
   }
-  ClipboardSetText(_mainWindow, s);
+  ClipboardSetText(_mainWindow, resultString);
 }
 
 void CPanel::CopyArcPath()
@@ -523,22 +519,14 @@ void CPanel::OpenArcFolder()
     ReadRegCustomExplorer(customExplorer);
     if (!customExplorer.IsEmpty())
     {
-      NWindows::NProcess::CProcess process;
+      NWindows::CProcess process;
       UString params = GetQuotedString(dir);
       process.Create(customExplorer, params, NULL);
     }
     else
     {
-       #if defined(UNDER_CE)
-       // ShellExecute is not available on some CE versions?
-       #else
-       SHELLEXECUTEINFO s;
-       memset(&s, 0, sizeof(s));
-       s.cbSize = sizeof(s);
-       s.lpFile = dir;
-       s.lpVerb = TEXT("explore");
-       s.nShow = SW_SHOWNORMAL;
-       ::ShellExecuteEx(&s);
+       #ifndef UNDER_CE
+       ::ShellExecuteW(NULL, L"explore", dir, NULL, NULL, SW_SHOWNORMAL);
        #endif
     }
   }
