@@ -64,7 +64,7 @@ void COverwriteDialog::SetItemIcon(unsigned iconID, HICON hIcon)
     DestroyIcon(hIcon);
 }
 
-static void AddSizeValue(UString &s, UInt64 value)
+void AddSizeValue(UString &s, UInt64 value)
 {
   {
     wchar_t sz[32];
