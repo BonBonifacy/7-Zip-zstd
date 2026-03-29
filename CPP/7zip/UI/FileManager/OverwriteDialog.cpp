@@ -211,6 +211,17 @@ bool COverwriteDialog::OnInit()
   if (ShowAutoRename)
     ShowItem_Bool(IDX_AUTO_RENAME, true);
 
+  if (IsFolder)
+  {
+    SetItemText(IDT_OVERWRITE_HEADER, L"Confirm Folder Conflict / 确认文件夹冲突");
+    SetItemText(IDT_OVERWRITE_QUESTION_BEGIN, L"This folder already exists: / 此文件夹已存在:");
+    SetItemText(IDT_OVERWRITE_QUESTION_END, L"Do you want to rename it? / 是否要重命名?");
+    
+    // Hide file specific labels as they are not relevant/defined for folder-only check
+    HideItem(IDT_OVERWRITE_OLD_FILE_SIZE_TIME);
+    HideItem(IDT_OVERWRITE_NEW_FILE_SIZE_TIME);
+  }
+
   return CModalDialog::OnInit();
 }
 

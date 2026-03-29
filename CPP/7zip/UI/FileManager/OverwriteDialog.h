@@ -73,10 +73,11 @@ public:
   bool DefaultButton_is_NO;
   bool AutoRename;
   bool ShowAutoRename;
+  bool IsFolder;
   NOverwriteDialog::CFileInfo OldFileInfo;
   NOverwriteDialog::CFileInfo NewFileInfo;
 
-  COverwriteDialog(): ShowExtraButtons(true), DefaultButton_is_NO(false), AutoRename(false), ShowAutoRename(false) {}
+  COverwriteDialog(): ShowExtraButtons(true), DefaultButton_is_NO(false), AutoRename(false), ShowAutoRename(false), IsFolder(false) {}
 
   INT_PTR Create(HWND parent = NULL)
   {

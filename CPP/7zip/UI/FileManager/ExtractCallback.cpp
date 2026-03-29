@@ -237,6 +237,8 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskOverwrite(
     AutoRenameAfterConfirm = dialog.AutoRename || (writeAnswer == IDB_AUTO_RENAME);
     if (AutoRenameAfterConfirm && (writeAnswer == IDYES || writeAnswer == IDB_YES_TO_ALL))
       *answer = NOverwriteAnswer::kAutoRename;
+    else if (writeAnswer == IDB_AUTO_RENAME)
+      *answer = NOverwriteAnswer::kAutoRename;
   }
 
   return S_OK;
@@ -693,16 +695,9 @@ HRESULT CExtractCallbackImp::CheckOutputFolderCollision(FString &dirPrefix)
   COverwriteDialog dialog;
   dialog.OldFileInfo.Path = fs2us(dirPrefix);
   dialog.OldFileInfo.Time_IsDefined = false;
-  dialog.OldFileInfo.Size_IsDefined = false;
-  dialog.OldFileInfo.Is_FileSystemFile = true;
-
-  dialog.NewFileInfo.Path = fs2us(dirPrefix);
-  dialog.NewFileInfo.Time_IsDefined = false;
-  dialog.NewFileInfo.Size_IsDefined = false;
-  dialog.NewFileInfo.Is_FileSystemFile = true;
-  
   dialog.ShowExtraButtons = false;
   dialog.ShowAutoRename = true;
+  dialog.IsFolder = true;
 
   ::OutputDebugStringW(L"CExtractCallbackImp::CheckOutputFolderCollision: Checking " + fs2us(dirPrefix) + L"\n");
 
@@ -804,7 +799,6 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
           }
           if ((answer == NOverwriteAnswer::kYes || answer == NOverwriteAnswer::kAutoRename) && AutoRenameAfterConfirm)
           {
-            FString newPathFinal;
             for (unsigned n = 1; ; n++)
             {
               FString testPath = us2fs(destPath);
@@ -817,11 +811,10 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
                 testPath += (wchar_t)L'\\';
               if (!NFile::NFind::DoesFileOrDirExist(testPath))
               {
-                newPathFinal = testPath;
+                destPathResultTemp = fs2us(testPath);
                 break;
               }
             }
-            RINOK(StringToBstr(fs2us(newPathFinal), destPathResult));
           }
         }
       }
