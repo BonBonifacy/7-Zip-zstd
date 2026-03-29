@@ -148,15 +148,11 @@ public:
   void CreateFile() { GetFocusedPanel().CreateFile(); }
   void CopyNames() { GetFocusedPanel().CopyNames(); }
   void CopyPaths() { GetFocusedPanel().CopyPaths(); }
-  void CopyNames();
-  void CopyPaths();
 
   // Edit
   void EditCut() { GetFocusedPanel().EditCut(); }
   void EditCopy() { GetFocusedPanel().EditCopy(); }
   void EditPaste();
-  void CopyNames();
-  void CopyPaths();
 
   void SelectAll(bool selectMode) { GetFocusedPanel().SelectAll(selectMode); }
   void InvertSelection() { GetFocusedPanel().InvertSelection(); }

@@ -781,8 +781,6 @@ bool ExecuteFileCommand(unsigned id)
     case IDM_DELETE: g_App.Delete(!IsKeyDown(VK_SHIFT)); break;
     case IDM_COPY_NAMES: g_App.CopyNames(); break;
     case IDM_COPY_PATHS: g_App.CopyPaths(); break;
-    case IDM_COPY_NAMES: g_App.CopyNames(); break;
-    case IDM_COPY_PATHS: g_App.CopyPaths(); break;
     
     case IDM_HASH_ALL: g_App.CalculateCrc("*"); break;
     case IDM_CRC32: g_App.CalculateCrc("CRC32"); break;
