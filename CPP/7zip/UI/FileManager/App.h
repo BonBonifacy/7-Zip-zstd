@@ -150,10 +150,6 @@ public:
 
   void CreateFolder() { GetFocusedPanel().CreateFolder(); }
   void CreateFile() { GetFocusedPanel().CreateFile(); }
-  void CopyNames() { GetFocusedPanel().CopyNames(); }
-  void CopyPaths() { GetFocusedPanel().CopyPaths(); }
-  void CopyArcPath() { GetFocusedPanel().CopyArcPath(); }
-  void OpenArcFolder() { GetFocusedPanel().OpenArcFolder(); }
 
   // Edit
   void EditCut() { GetFocusedPanel().EditCut(); }
