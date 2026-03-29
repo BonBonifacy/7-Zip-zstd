@@ -219,7 +219,7 @@ BEGIN
 //  IDS_MOVING    "Moving..."
   IDS_RENAMING  "Renaming..."
   IDS_COPY_NAMES "Copy Name"
-  IDS_COPY_PATHS "Copy Full Path"
+  IDS_COPY_PATHS "Copy Path"
 
   IDS_OPERATION_IS_NOT_SUPPORTED  "Operation is not supported."
   IDS_ERROR_RENAMING  "Error Renaming File or Folder"

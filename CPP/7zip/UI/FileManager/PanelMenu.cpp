@@ -453,7 +453,11 @@ void CPanel::CopyPaths()
   UString s;
   CRecordVector<UInt32> indices;
   Get_ItemIndices_OperSmart(indices);
-  UString prefix = GetFsPath();
+  
+  UString prefix;
+  if (!IsArcFolder())
+    prefix = GetFsPath();
+    
   FOR_VECTOR (i, indices)
   {
     if (i != 0)
