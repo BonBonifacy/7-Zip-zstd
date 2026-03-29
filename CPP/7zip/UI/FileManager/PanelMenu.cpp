@@ -431,23 +431,35 @@ void CPanel::EditCut()
 
 void CPanel::EditCopy()
 {
-  /*
-  CMyComPtr<IGetFolderArcProps> getFolderArcProps;
-  _folder.QueryInterface(IID_IGetFolderArcProps, &getFolderArcProps);
-  if (!getFolderArcProps)
-  {
-    InvokeSystemCommand("copy");
-    return;
-  }
-  */
+  CopyNames();
+}
+
+void CPanel::CopyNames()
+{
   UString s;
   CRecordVector<UInt32> indices;
-  Get_ItemIndices_Selected(indices);
+  Get_ItemIndices_OperSmart(indices);
   FOR_VECTOR (i, indices)
   {
     if (i != 0)
-      s += "\xD\n";
+      s += L"\r\n";
     s += GetItemName(indices[i]);
+  }
+  ClipboardSetText(_mainWindow, s);
+}
+
+void CPanel::CopyPaths()
+{
+  UString s;
+  CRecordVector<UInt32> indices;
+  Get_ItemIndices_OperSmart(indices);
+  UString prefix = GetFsPath();
+  FOR_VECTOR (i, indices)
+  {
+    if (i != 0)
+      s += L"\r\n";
+    s += prefix;
+    s += GetItemRelPath(indices[i]);
   }
   ClipboardSetText(_mainWindow, s);
 }

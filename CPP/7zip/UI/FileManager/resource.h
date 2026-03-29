@@ -85,6 +85,12 @@
 #define IDM_DESELECT             604
 #define IDM_SELECT_BY_TYPE       605
 #define IDM_DESELECT_BY_TYPE     606
+#define IDM_COPY_NAMES           607
+#define IDM_COPY_PATHS           608
+#define IDM_COPY_NAMES           607
+#define IDM_COPY_PATHS           608
+#define IDM_COPY_NAMES           607
+#define IDM_COPY_PATHS           608
 
 #define IDM_VIEW_LARGE_ICONS     700
 #define IDM_VIEW_SMALL_ICONS     701
@@ -149,6 +155,12 @@
 #define IDS_COPYING                     6004
 // #define IDS_MOVING                      6005
 #define IDS_RENAMING                    6006
+#define IDS_COPY_NAMES                  6012
+#define IDS_COPY_PATHS                  6013
+#define IDS_COPY_NAMES                  6012
+#define IDS_COPY_PATHS                  6013
+#define IDS_COPY_NAMES                  6012
+#define IDS_COPY_PATHS                  6013
 
 #define IDS_OPERATION_IS_NOT_SUPPORTED  6008
 #define IDS_ERROR_RENAMING              6009
