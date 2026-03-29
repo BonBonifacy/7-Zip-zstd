@@ -317,6 +317,8 @@ public:
     , YesToAll(false)
     , TestMode(false)
     , OverwriteMode(NExtract::NOverwriteMode::kAsk)
+    , SmartExtract(false)
+    , AutoRenameAfterConfirm(false)
 #ifndef Z7_SFX
     , _hashCalc(NULL)
 #endif

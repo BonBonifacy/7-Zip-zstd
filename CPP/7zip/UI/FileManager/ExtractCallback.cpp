@@ -749,21 +749,23 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
           }
           if (answer == NOverwriteAnswer::kYes && AutoRenameAfterConfirm)
           {
+            FString newPathFinal;
             for (unsigned n = 1; ; n++)
             {
-              FString testPath = destPath;
-              if (IsPathSepar(testPath.Back()))
+              FString testPath = us2fs(destPath);
+              if (::IsPathSepar(testPath.Back()))
                 testPath.DeleteBack();
               testPath += " (";
               testPath.Add_UInt32(n);
               testPath += ")";
               testPath += STRING_PATH_SEPARATOR;
-              if (!NFind::DoesFileOrDirExist(testPath))
+              if (!NFile::NFind::DoesFileOrDirExist(testPath))
               {
-                destPath = testPath;
+                newPathFinal = testPath;
                 break;
               }
             }
+            RINOK(StringToBstr(fs2us(newPathFinal), destPathResult));
           }
         }
       }
