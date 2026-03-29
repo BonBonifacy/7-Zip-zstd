@@ -184,27 +184,6 @@ static HRESULT DecompressArchive(
   */
   else
   {
-    if (options.ElimDup.Val)
-    {
-      if (NFind::DoesDirExist(outDir))
-      {
-        for (unsigned n = 1; ; n++)
-        {
-          FString testPath = outDir;
-          if (IsPathSepar(testPath.Back()))
-            testPath.DeleteBack();
-          testPath += " (";
-          testPath.Add_UInt32(n);
-          testPath += ")";
-          testPath += STRING_PATH_SEPARATOR;
-          if (!NFind::DoesFileOrDirExist(testPath))
-          {
-            outDir = testPath;
-            break;
-          }
-        }
-      }
-    }
     if (!CreateComplexDir(outDir))
     {
       const HRESULT res = GetLastError_noZero_HRESULT();

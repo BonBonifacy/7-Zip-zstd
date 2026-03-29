@@ -215,6 +215,9 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskOverwrite(
   dialog.NewFileInfo.Path = newName;
   dialog.NewFileInfo.Is_FileSystemFile = Src_Is_IO_FS_Folder;
   
+  if (SmartExtract)
+    dialog.ShowAutoRename = true;
+
   ProgressDialog->WaitCreating();
   const INT_PTR writeAnswer = dialog.Create(*ProgressDialog);
   
@@ -228,6 +231,10 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskOverwrite(
     case IDB_AUTO_RENAME: *answer = NOverwriteAnswer::kAutoRename; break;
     default: return E_FAIL;
   }
+  
+  if (SmartExtract)
+    AutoRenameAfterConfirm = dialog.AutoRename;
+
   return S_OK;
 }
 
@@ -729,7 +736,38 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
   {
     if (srcIsFolderSpec)
     {
-      if (!destFileInfo.IsDir())
+      if (destFileInfo.IsDir())
+      {
+        if (SmartExtract)
+        {
+          Int32 answer;
+          RINOK(AskOverwrite(fs2us(destPath), &destFileInfo.MTime, NULL, fs2us(destPath), NULL, NULL, &answer));
+          if (answer == NOverwriteAnswer::kNo)
+          {
+            *writeAnswer = BoolToInt(false);
+            return S_OK;
+          }
+          if (answer == NOverwriteAnswer::kYes && AutoRenameAfterConfirm)
+          {
+            for (unsigned n = 1; ; n++)
+            {
+              FString testPath = destPath;
+              if (IsPathSepar(testPath.Back()))
+                testPath.DeleteBack();
+              testPath += " (";
+              testPath.Add_UInt32(n);
+              testPath += ")";
+              testPath += STRING_PATH_SEPARATOR;
+              if (!NFind::DoesFileOrDirExist(testPath))
+              {
+                destPath = testPath;
+                break;
+              }
+            }
+          }
+        }
+      }
+      else
       {
         RINOK(MessageError("Cannot replace file with folder with same name", destPathSys))
         return E_ABORT;

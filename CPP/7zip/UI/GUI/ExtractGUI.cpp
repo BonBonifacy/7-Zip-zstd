@@ -314,6 +314,7 @@ HRESULT ExtractGUI(
 
   extracter.Title = title;
   extracter.ExtractCallbackSpec = extractCallback;
+  extracter.ExtractCallbackSpec->SmartExtract = options.ElimDup.Val;
   extracter.ExtractCallbackSpec->ProgressDialog = &extracter;
   extracter.FolderArchiveExtractCallback = extractCallback;
   extracter.ExtractCallbackSpec->Init();

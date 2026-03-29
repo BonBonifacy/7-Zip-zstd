@@ -71,10 +71,12 @@ class COverwriteDialog: public NWindows::NControl::CModalDialog
 public:
   bool ShowExtraButtons;
   bool DefaultButton_is_NO;
+  bool AutoRename;
+  bool ShowAutoRename;
   NOverwriteDialog::CFileInfo OldFileInfo;
   NOverwriteDialog::CFileInfo NewFileInfo;
 
-  COverwriteDialog(): ShowExtraButtons(true), DefaultButton_is_NO(false) {}
+  COverwriteDialog(): ShowExtraButtons(true), DefaultButton_is_NO(false), AutoRename(false), ShowAutoRename(false) {}
 
   INT_PTR Create(HWND parent = NULL)
   {

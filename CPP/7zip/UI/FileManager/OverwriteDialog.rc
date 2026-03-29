@@ -2,7 +2,7 @@
 #include "../../GuiCommon.rc"
 
 #define xc 340
-#define yc 200
+#define yc 220
 
 #undef iconSize
 #define iconSize 24
@@ -34,6 +34,8 @@ BEGIN
   ICON   "", IDI_OVERWRITE_NEW_FILE_2,           m, 114 + iconSize, iconSize, iconSize
   LTEXT  "", IDT_OVERWRITE_NEW_FILE_SIZE_TIME,   x, 114, fx, fy, SS_NOPREFIX
   
+  CONTROL  "Auto-incrementing naming resolution (&A)", IDX_AUTO_RENAME, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, m, 170, xc, 10
+
   PUSHBUTTON  "&Yes",         IDYES,             bx3, by2, bxs, bys
   PUSHBUTTON  "Yes to &All",  IDB_YES_TO_ALL,    bx2, by2, bxs, bys
   PUSHBUTTON  "A&uto Rename", IDB_AUTO_RENAME,   bx1, by2, bSizeBig, bys

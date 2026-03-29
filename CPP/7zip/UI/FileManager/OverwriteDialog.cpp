@@ -260,7 +260,10 @@ bool COverwriteDialog::OnInit()
     // ::SetFocus(h);
   }
 
-  return CModalDialog::OnInit();
+  if (ShowAutoRename)
+    ShowItem(IDX_AUTO_RENAME, true);
+
+  return CModalDialog::OnInitDialog();
 }
 
 bool COverwriteDialog::OnDestroy()
@@ -280,9 +283,13 @@ bool COverwriteDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
     case IDNO:
     case IDB_YES_TO_ALL:
     case IDB_NO_TO_ALL:
-    case IDB_AUTO_RENAME:
-      End((INT_PTR)buttonID);
-      return true;
+    case IDYES:
+    case IDB_YES_TO_ALL:
+      AutoRename = IsButtonChecked(IDX_AUTO_RENAME);
+      break;
   }
+  EndDialog(buttonID);
+  return true;
+}
   return CModalDialog::OnButtonClicked(buttonID, buttonHWND);
 }

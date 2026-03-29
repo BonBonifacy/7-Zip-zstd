@@ -237,6 +237,8 @@ public:
   bool StreamMode; // set to true, if you want the callee to call GetStream7()
   bool ThereAreMessageErrors;
   bool Src_Is_IO_FS_Folder;
+  bool SmartExtract;
+  bool AutoRenameAfterConfirm;
 
 #ifndef Z7_NO_CRYPTO
   bool PasswordIsDefined;
