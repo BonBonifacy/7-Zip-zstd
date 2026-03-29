@@ -455,14 +455,38 @@ void CPanel::CopyPaths()
   Get_ItemIndices_OperSmart(indices);
   
   UString prefix;
-  if (!IsArcFolder())
+  unsigned skipLen = 0;
+  
+  if (IsArcFolder() && !_parentFolders.IsEmpty())
+  {
+    // Path inside the archive is (Full Path) - (Physical Archive Path)
+    const CFolderLink &rootArc = _parentFolders[0];
+    UString rootArcPath = rootArc.ParentFolderPath + rootArc.RelPath;
+    skipLen = rootArcPath.Len();
+    // Skip the backslash after the archive name if it exists
+    if (_currentFolderPrefix.Len() > skipLen && IS_PATH_SEPAR(_currentFolderPrefix[skipLen]))
+      skipLen++;
+  }
+  else
+  {
+    // Not in an archive, use normal filesystem prefix
     prefix = GetFsPath();
+  }
     
   FOR_VECTOR (i, indices)
   {
     if (i != 0)
       s += L"\r\n";
-    s += prefix;
+    
+    if (skipLen > 0)
+    {
+       // In Archive mode: Prefix is the part of _currentFolderPrefix after the archive file
+       s += _currentFolderPrefix.Ptr(skipLen);
+    }
+    else
+    {
+       s += prefix;
+    }
     s += GetItemRelPath(indices[i]);
   }
   ClipboardSetText(_mainWindow, s);
