@@ -741,7 +741,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
         if (SmartExtract)
         {
           Int32 answer;
-          RINOK(AskOverwrite(fs2us(destPath), &destFileInfo.MTime, NULL, fs2us(destPath), NULL, NULL, &answer));
+          RINOK(AskOverwrite(destPath, &destFileInfo.MTime, NULL, destPath, NULL, NULL, &answer));
           if (answer == NOverwriteAnswer::kNo)
           {
             *writeAnswer = BoolToInt(false);
@@ -758,7 +758,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
               testPath += " (";
               testPath.Add_UInt32(n);
               testPath += ")";
-              testPath += STRING_PATH_SEPARATOR;
+              testPath += (wchar_t)W_PATH_SEPARATOR;
               if (!NFile::NFind::DoesFileOrDirExist(testPath))
               {
                 newPathFinal = testPath;
