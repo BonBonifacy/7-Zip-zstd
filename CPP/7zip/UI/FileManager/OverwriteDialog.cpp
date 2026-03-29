@@ -223,7 +223,7 @@ bool COverwriteDialog::OnDestroy()
   return false;
 }
 
-bool COverwriteDialog::OnButtonClicked(unsigned buttonID, HWND buttonHWND)
+bool COverwriteDialog::OnButtonClicked(unsigned buttonID, HWND /* buttonHWND */)
 {
   switch (buttonID)
   {
