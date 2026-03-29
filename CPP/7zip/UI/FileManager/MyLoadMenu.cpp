@@ -601,17 +601,13 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
   {
     destMenu.AppendItem(MF_STRING, IDM_COPY_NAMES, LangString(IDS_COPY_NAMES));
     destMenu.AppendItem(MF_STRING, IDM_COPY_PATHS, LangString(IDS_COPY_PATHS));
+    if (isArcFolder)
+    {
+      destMenu.AppendItem(MF_STRING, IDM_COPY_ARC_PATH, LangString(IDS_COPY_ARC_PATH));
+      destMenu.AppendItem(MF_STRING, IDM_OPEN_ARC_FOLDER, LangString(IDS_OPEN_ARC_FOLDER));
+    }
     destMenu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)0);
-    startPos += 3;
-    numRealItems = startPos;
-  }
-
-  if (numItems > 0)
-  {
-    destMenu.AppendItem(MF_STRING, IDM_COPY_NAMES, LangString(IDS_COPY_NAMES));
-    destMenu.AppendItem(MF_STRING, IDM_COPY_PATHS, LangString(IDS_COPY_PATHS));
-    destMenu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)0);
-    startPos += 3;
+    startPos += (isArcFolder ? 5 : 3);
     numRealItems = startPos;
   }
 
@@ -781,6 +777,8 @@ bool ExecuteFileCommand(unsigned id)
     case IDM_DELETE: g_App.Delete(!IsKeyDown(VK_SHIFT)); break;
     case IDM_COPY_NAMES: g_App.CopyNames(); break;
     case IDM_COPY_PATHS: g_App.CopyPaths(); break;
+    case IDM_COPY_ARC_PATH: g_App.CopyArcPath(); break;
+    case IDM_OPEN_ARC_FOLDER: g_App.OpenArcFolder(); break;
     
     case IDM_HASH_ALL: g_App.CalculateCrc("*"); break;
     case IDM_CRC32: g_App.CalculateCrc("CRC32"); break;

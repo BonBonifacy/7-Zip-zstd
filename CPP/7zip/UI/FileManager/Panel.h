@@ -681,6 +681,8 @@ public:
   void EditPaste();
   void CopyNames();
   void CopyPaths();
+  void CopyArcPath();
+  void OpenArcFolder();
 
  
   // void SortItems(int index);

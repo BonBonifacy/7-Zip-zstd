@@ -220,6 +220,8 @@ BEGIN
   IDS_RENAMING  "Renaming..."
   IDS_COPY_NAMES "Copy Name"
   IDS_COPY_PATHS "Copy Path"
+  IDS_COPY_ARC_PATH "Copy Archive Path"
+  IDS_OPEN_ARC_FOLDER "Open Archive Folder"
 
   IDS_OPERATION_IS_NOT_SUPPORTED  "Operation is not supported."
   IDS_ERROR_RENAMING  "Error Renaming File or Folder"

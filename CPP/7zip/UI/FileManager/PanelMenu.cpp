@@ -21,7 +21,15 @@
 #include "PropertyName.h"
 
 #include "PropertyNameRes.h"
+#include "RegistryUtils.h"
 #include "resource.h"
+
+#include "../../../Windows/ProcessUtils.h"
+#include "../../../Windows/FileName.h"
+
+#if !defined(UNDER_CE)
+#include <Shellapi.h>
+#endif
 
 // #define SHOW_DEBUG_PANEL_MENU
 
@@ -490,6 +498,50 @@ void CPanel::CopyPaths()
     s += GetItemRelPath(indices[i]);
   }
   ClipboardSetText(_mainWindow, s);
+}
+
+void CPanel::CopyArcPath()
+{
+  if (!_parentFolders.IsEmpty())
+  {
+    const CFolderLink &rootArc = _parentFolders[0];
+    UString path = rootArc.ParentFolderPath + rootArc.RelPath;
+    ClipboardSetText(_mainWindow, path);
+  }
+}
+
+void CPanel::OpenArcFolder()
+{
+  if (!_parentFolders.IsEmpty())
+  {
+    const CFolderLink &rootArc = _parentFolders[0];
+    UString dir = rootArc.ParentFolderPath;
+    if (dir.IsEmpty())
+      return;
+    
+    UString customExplorer;
+    ReadRegCustomExplorer(customExplorer);
+    if (!customExplorer.IsEmpty())
+    {
+      NWindows::NProcess::CProcess process;
+      UString params = NWindows::NFile::NName::GetQuotedString(dir);
+      process.Create(customExplorer, params, NULL);
+    }
+    else
+    {
+       #if defined(UNDER_CE)
+       // ShellExecute is not available on some CE versions?
+       #else
+       SHELLEXECUTEINFO s;
+       memset(&s, 0, sizeof(s));
+       s.cbSize = sizeof(s);
+       s.lpFile = dir;
+       s.lpVerb = TEXT("explore");
+       s.nShow = SW_SHOWNORMAL;
+       ::ShellExecuteEx(&s);
+       #endif
+    }
+  }
 }
 
 void CPanel::EditPaste()
@@ -992,6 +1044,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   fm.readOnly = IsThereReadOnlyFolder();
   fm.isHashFolder = IsHashFolder();
   fm.isFsFolder = Is_IO_FS_Folder();
+  fm.isArcFolder = IsArcFolder();
   fm.programMenu = programMenu;
   fm.allAreFiles = (firstDirIndex == -1);
   fm.numItems = operatedIndices.Size();
