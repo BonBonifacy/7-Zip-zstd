@@ -233,7 +233,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskOverwrite(
   }
   
   if (SmartExtract)
-    AutoRenameAfterConfirm = dialog.AutoRename;
+    AutoRenameAfterConfirm = dialog.AutoRename || (writeAnswer == IDB_AUTO_RENAME);
 
   return S_OK;
 }
@@ -706,7 +706,7 @@ HRESULT CExtractCallbackImp::CheckOutputFolderCollision(FString &dirPrefix)
   if (res == IDCANCEL)
     return E_ABORT;
     
-  if ((res == IDYES || res == IDB_YES_TO_ALL) && dialog.AutoRename)
+  if (res == IDB_AUTO_RENAME || ((res == IDYES || res == IDB_YES_TO_ALL) && dialog.AutoRename))
   {
     for (unsigned n = 1; ; n++)
     {
@@ -796,7 +796,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
             *writeAnswer = BoolToInt(false);
             return S_OK;
           }
-          if (answer == NOverwriteAnswer::kYes && AutoRenameAfterConfirm)
+          if ((answer == NOverwriteAnswer::kYes || answer == NOverwriteAnswer::kAutoRename) && AutoRenameAfterConfirm)
           {
             FString newPathFinal;
             for (unsigned n = 1; ; n++)
@@ -807,7 +807,8 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
               testPath += " (";
               testPath.Add_UInt32(n);
               testPath += ")";
-              testPath += (wchar_t)L'\\';
+              if (srcIsFolderSpec)
+                testPath += (wchar_t)L'\\';
               if (!NFile::NFind::DoesFileOrDirExist(testPath))
               {
                 newPathFinal = testPath;
@@ -870,7 +871,7 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskWrite(
         break;
     }
     
-    if (OverwriteMode == NExtract::NOverwriteMode::kRename)
+    if (OverwriteMode == NExtract::NOverwriteMode::kRename || (OverwriteMode == NExtract::NOverwriteMode::kAsk && AutoRenameAfterConfirm))
     {
       if (!AutoRenamePath(destPathSys))
       {

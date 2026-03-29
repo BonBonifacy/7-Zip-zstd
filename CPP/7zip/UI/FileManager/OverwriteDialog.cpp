@@ -232,9 +232,12 @@ bool COverwriteDialog::OnButtonClicked(unsigned buttonID, HWND /* buttonHWND */)
       AutoRename = IsButtonCheckedBool(IDX_AUTO_RENAME);
       break;
     
+    case IDB_AUTO_RENAME:
+      AutoRename = true;
+      break;
+
     case IDNO:
     case IDB_NO_TO_ALL:
-    case IDB_AUTO_RENAME:
     case IDCANCEL:
       break;
   }
