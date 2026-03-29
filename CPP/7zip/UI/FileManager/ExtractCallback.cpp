@@ -233,7 +233,11 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskOverwrite(
   }
   
   if (SmartExtract)
+  {
     AutoRenameAfterConfirm = dialog.AutoRename || (writeAnswer == IDB_AUTO_RENAME);
+    if (AutoRenameAfterConfirm && (writeAnswer == IDYES || writeAnswer == IDB_YES_TO_ALL))
+      *answer = NOverwriteAnswer::kAutoRename;
+  }
 
   return S_OK;
 }
@@ -699,6 +703,8 @@ HRESULT CExtractCallbackImp::CheckOutputFolderCollision(FString &dirPrefix)
   
   dialog.ShowExtraButtons = false;
   dialog.ShowAutoRename = true;
+
+  ::OutputDebugStringW(L"CExtractCallbackImp::CheckOutputFolderCollision: Checking " + fs2us(dirPrefix) + L"\n");
 
   ProgressDialog->WaitCreating();
   const INT_PTR res = dialog.Create(*ProgressDialog);
