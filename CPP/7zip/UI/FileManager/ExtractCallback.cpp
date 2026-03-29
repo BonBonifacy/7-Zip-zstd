@@ -240,6 +240,11 @@ Z7_COM7F_IMF(CExtractCallbackImp::AskOverwrite(
     else if (writeAnswer == IDB_AUTO_RENAME)
       *answer = NOverwriteAnswer::kAutoRename;
   }
+  
+  if (*answer == NOverwriteAnswer::kAutoRename)
+  {
+    OverwriteMode = NExtract::NOverwriteMode::kRename;
+  }
 
   return S_OK;
 }
@@ -700,6 +705,7 @@ HRESULT CExtractCallbackImp::CheckOutputFolderCollision(FString &dirPrefix)
   dialog.IsFolder = true;
 
   ::OutputDebugStringW(L"CExtractCallbackImp::CheckOutputFolderCollision: Checking " + fs2us(dirPrefix) + L"\n");
+  // MessageBoxW(NULL, L"CheckOutputFolderCollision Triggered", L"7-Zip Smart Extract Debug", MB_OK | MB_ICONINFORMATION);
 
   ProgressDialog->WaitCreating();
   const INT_PTR res = dialog.Create(*ProgressDialog);
