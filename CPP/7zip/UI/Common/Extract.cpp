@@ -182,11 +182,35 @@ static HRESULT DecompressArchive(
   else if (NName::IsAltPathPrefix(outDir)) {}
   #endif
   */
-  else if (!CreateComplexDir(outDir))
+  else
   {
-    const HRESULT res = GetLastError_noZero_HRESULT();
-    SetErrorMessage("Cannot create output directory", outDir, res, errorMessage);
-    return res;
+    if (options.ElimDup.Val)
+    {
+      if (NFile::NFind::DoesDirExist(outDir))
+      {
+        for (unsigned n = 1; ; n++)
+        {
+          FString testPath = outDir;
+          if (NFile::NName::IsPathSepar(testPath.Back()))
+            testPath.DeleteBack();
+          testPath += " (";
+          testPath.Add_UInt32(n);
+          testPath += ")";
+          testPath += STRING_PATH_SEPARATOR;
+          if (!NFile::NFind::DoesFileOrDirExist(testPath))
+          {
+            outDir = testPath;
+            break;
+          }
+        }
+      }
+    }
+    if (!CreateComplexDir(outDir))
+    {
+      const HRESULT res = GetLastError_noZero_HRESULT();
+      SetErrorMessage("Cannot create output directory", outDir, res, errorMessage);
+      return res;
+    }
   }
 
   ecs->Init(
