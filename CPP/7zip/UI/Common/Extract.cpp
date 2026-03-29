@@ -186,18 +186,18 @@ static HRESULT DecompressArchive(
   {
     if (options.ElimDup.Val)
     {
-      if (NFile::NFind::DoesDirExist(outDir))
+      if (NFind::DoesDirExist(outDir))
       {
         for (unsigned n = 1; ; n++)
         {
           FString testPath = outDir;
-          if (NFile::NName::IsPathSepar(testPath.Back()))
+          if (IsPathSepar(testPath.Back()))
             testPath.DeleteBack();
           testPath += " (";
           testPath.Add_UInt32(n);
           testPath += ")";
           testPath += STRING_PATH_SEPARATOR;
-          if (!NFile::NFind::DoesFileOrDirExist(testPath))
+          if (!NFind::DoesFileOrDirExist(testPath))
           {
             outDir = testPath;
             break;
