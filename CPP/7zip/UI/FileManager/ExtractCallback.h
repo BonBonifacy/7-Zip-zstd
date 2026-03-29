@@ -213,6 +213,7 @@ class CExtractCallbackImp Z7_final:
   Z7_COM_ADDREF_RELEASE
 
   Z7_IFACE_IMP(IExtractCallbackUI)
+  virtual HRESULT CheckOutputFolderCollision(FString &dirPrefix) Z7_override;
   Z7_IFACE_IMP(IOpenCallbackUI)
   Z7_IFACE_COM7_IMP(IProgress)
   Z7_IFACE_COM7_IMP(IFolderArchiveExtractCallback)

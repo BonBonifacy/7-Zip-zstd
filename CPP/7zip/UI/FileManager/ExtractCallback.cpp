@@ -659,9 +659,9 @@ void CExtractCallbackImp::Add_ArchiveName_Error()
 
 HRESULT CExtractCallbackImp::ExtractResult(HRESULT result)
 {
-  #ifndef Z7_SFX
+#ifndef Z7_SFX
   ProgressDialog->Sync.Set_FilePath(L"");
-  #endif
+#endif
 
   if (result == S_OK)
     return result;
@@ -675,6 +675,55 @@ HRESULT CExtractCallbackImp::ExtractResult(HRESULT result)
   if (!_currentFilePath.IsEmpty())
     MessageError(_currentFilePath);
   MessageError(NError::MyFormatMessage(result));
+  return S_OK;
+}
+
+HRESULT CExtractCallbackImp::CheckOutputFolderCollision(FString &dirPrefix)
+{
+  if (!SmartExtract)
+    return S_OK;
+  
+  if (!NFile::NFind::DoesFileOrDirExist(dirPrefix))
+    return S_OK;
+
+  COverwriteDialog dialog;
+  dialog.OldFileInfo.Path = fs2us(dirPrefix);
+  dialog.OldFileInfo.Time_IsDefined = false;
+  dialog.OldFileInfo.Size_IsDefined = false;
+  dialog.OldFileInfo.Is_FileSystemFile = true;
+
+  dialog.NewFileInfo.Path = fs2us(dirPrefix);
+  dialog.NewFileInfo.Time_IsDefined = false;
+  dialog.NewFileInfo.Size_IsDefined = false;
+  dialog.NewFileInfo.Is_FileSystemFile = true;
+  
+  dialog.ShowExtraButtons = false;
+  dialog.ShowAutoRename = true;
+
+  ProgressDialog->WaitCreating();
+  const INT_PTR res = dialog.Create(*ProgressDialog);
+  
+  if (res == IDCANCEL)
+    return E_ABORT;
+    
+  if ((res == IDYES || res == IDB_YES_TO_ALL) && dialog.AutoRename)
+  {
+    for (unsigned n = 1; ; n++)
+    {
+      FString testPath = dirPrefix;
+      if (IsPathSepar(testPath.Back()))
+        testPath.DeleteBack();
+      testPath += " (";
+      testPath.Add_UInt32(n);
+      testPath += ")";
+      testPath += (wchar_t)L'\\';
+      if (!NFile::NFind::DoesFileOrDirExist(testPath))
+      {
+        dirPrefix = testPath;
+        break;
+      }
+    }
+  }
   return S_OK;
 }
 

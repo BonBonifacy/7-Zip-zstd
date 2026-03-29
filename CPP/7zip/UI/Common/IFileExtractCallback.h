@@ -85,6 +85,7 @@ is implemented by
   virtual HRESULT OpenResult(const CCodecs *codecs, const CArchiveLink &arcLink, const wchar_t *name, HRESULT result) px \
   virtual HRESULT ThereAreNoFiles() px \
   virtual HRESULT ExtractResult(HRESULT result) px \
+  virtual HRESULT CheckOutputFolderCollision(FString &dirPrefix) px \
   Z7_IFACEM_IExtractCallbackUI_Crypto(px)
 
 // IExtractCallbackUI - is non-COM interface
