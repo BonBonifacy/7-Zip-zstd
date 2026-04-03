@@ -622,6 +622,7 @@ void CContextMenuInfo::Load()
       & ~NContextMenuFlags::kCompressEmail
       & ~NContextMenuFlags::kCompressTo7zEmail
       & ~NContextMenuFlags::kCompressToZipEmail
+      & ~NContextMenuFlags::kSmartExtract
       */
       ;
   Flags_Def = false;
