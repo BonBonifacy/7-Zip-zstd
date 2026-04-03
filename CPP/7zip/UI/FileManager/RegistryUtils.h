@@ -17,6 +17,9 @@ void ReadRegDiff(UString &path);
 
 void ReadReg_VerCtrlPath(UString &path);
 
+void SaveRegCustomExplorer(const UString &path);
+void ReadRegCustomExplorer(UString &path);
+
 struct CFmSettings
 {
   bool ShowDots;

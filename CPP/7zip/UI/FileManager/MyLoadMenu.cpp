@@ -67,7 +67,9 @@ static const CIDLangPair kIDLangPairs[] =
   { IDM_VIEW_ARANGE_BY_NAME, IDS_PROP_NAME },
   { IDM_VIEW_ARANGE_BY_TYPE, IDS_PROP_FILE_TYPE },
   { IDM_VIEW_ARANGE_BY_DATE, IDS_PROP_MTIME },
-  { IDM_VIEW_ARANGE_BY_SIZE, IDS_PROP_SIZE }
+  { IDM_VIEW_ARANGE_BY_SIZE, IDS_PROP_SIZE },
+  { IDM_COPY_NAMES, IDS_COPY_NAMES },
+  { IDM_COPY_PATHS, IDS_COPY_PATHS }
 };
 
 static int FindLangItem(unsigned controlID)
@@ -595,6 +597,20 @@ void CFileMenu::Load(HMENU hMenu, unsigned startPos)
 
   unsigned numRealItems = startPos;
 
+  if (numItems > 0)
+  {
+    destMenu.AppendItem(MF_STRING, IDM_COPY_NAMES, LangString(IDS_COPY_NAMES));
+    destMenu.AppendItem(MF_STRING, IDM_COPY_PATHS, LangString(IDS_COPY_PATHS));
+    if (isArcFolder)
+    {
+      destMenu.AppendItem(MF_STRING, IDM_COPY_ARC_PATH, LangString(IDS_COPY_ARC_PATH));
+      destMenu.AppendItem(MF_STRING, IDM_OPEN_ARC_FOLDER, LangString(IDS_OPEN_ARC_FOLDER));
+    }
+    destMenu.AppendItem(MF_SEPARATOR, 0, (LPCTSTR)0);
+    startPos += (isArcFolder ? 5 : 3);
+    numRealItems = startPos;
+  }
+
   const bool isBigScreen = NControl::IsDialogSizeOK(40, 200, g_HWND);
   
   for (unsigned i = 0;; i++)
@@ -759,6 +775,10 @@ bool ExecuteFileCommand(unsigned id)
     case IDM_COPY_TO: g_App.CopyTo(); break;
     case IDM_MOVE_TO: g_App.MoveTo(); break;
     case IDM_DELETE: g_App.Delete(!IsKeyDown(VK_SHIFT)); break;
+    case IDM_COPY_NAMES: g_App.CopyNames(); break;
+    case IDM_COPY_PATHS: g_App.CopyPaths(); break;
+    case IDM_COPY_ARC_PATH: g_App.CopyArcPath(); break;
+    case IDM_OPEN_ARC_FOLDER: g_App.OpenArcFolder(); break;
     
     case IDM_HASH_ALL: g_App.CalculateCrc("*"); break;
     case IDM_CRC32: g_App.CalculateCrc("CRC32"); break;

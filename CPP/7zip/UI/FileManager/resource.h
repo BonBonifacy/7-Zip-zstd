@@ -85,6 +85,10 @@
 #define IDM_DESELECT             604
 #define IDM_SELECT_BY_TYPE       605
 #define IDM_DESELECT_BY_TYPE     606
+#define IDM_COPY_NAMES           607
+#define IDM_COPY_PATHS           608
+#define IDM_COPY_ARC_PATH        609
+#define IDM_OPEN_ARC_FOLDER      610
 
 #define IDM_VIEW_LARGE_ICONS     700
 #define IDM_VIEW_SMALL_ICONS     701
@@ -149,11 +153,14 @@
 #define IDS_COPYING                     6004
 // #define IDS_MOVING                      6005
 #define IDS_RENAMING                    6006
-
 #define IDS_OPERATION_IS_NOT_SUPPORTED  6008
 #define IDS_ERROR_RENAMING              6009
 #define IDS_CONFIRM_FILE_COPY           6010
 #define IDS_WANT_TO_COPY_FILES          6011
+#define IDS_COPY_NAMES                  6012
+#define IDS_COPY_PATHS                  6013
+#define IDS_COPY_ARC_PATH               6014
+#define IDS_OPEN_ARC_FOLDER             6015
 
 #define IDS_CONFIRM_FILE_DELETE         6100
 #define IDS_CONFIRM_FOLDER_DELETE       6101

@@ -21,7 +21,15 @@
 #include "PropertyName.h"
 
 #include "PropertyNameRes.h"
+#include "RegistryUtils.h"
 #include "resource.h"
+
+#include "../../../Windows/ProcessUtils.h"
+#include "../../../Windows/FileName.h"
+
+#if !defined(UNDER_CE)
+#include <Shellapi.h>
+#endif
 
 // #define SHOW_DEBUG_PANEL_MENU
 
@@ -431,25 +439,97 @@ void CPanel::EditCut()
 
 void CPanel::EditCopy()
 {
-  /*
-  CMyComPtr<IGetFolderArcProps> getFolderArcProps;
-  _folder.QueryInterface(IID_IGetFolderArcProps, &getFolderArcProps);
-  if (!getFolderArcProps)
-  {
-    InvokeSystemCommand("copy");
-    return;
-  }
-  */
-  UString s;
+  CopyNames();
+}
+
+void CPanel::CopyNames()
+{
+  UString resultString;
   CRecordVector<UInt32> indices;
-  Get_ItemIndices_Selected(indices);
+  Get_ItemIndices_OperSmart(indices);
   FOR_VECTOR (i, indices)
   {
     if (i != 0)
-      s += "\xD\n";
-    s += GetItemName(indices[i]);
+      resultString += L"\r\n";
+    resultString += GetItemName(indices[i]);
   }
-  ClipboardSetText(_mainWindow, s);
+  ClipboardSetText(_mainWindow, resultString);
+}
+
+void CPanel::CopyPaths()
+{
+  UString resultString;
+  CRecordVector<UInt32> indices;
+  Get_ItemIndices_OperSmart(indices);
+  
+  UString prefix;
+  unsigned skipLen = 0;
+  
+  if (IsArcFolder() && !_parentFolders.IsEmpty())
+  {
+    const CFolderLink &rootArc = _parentFolders[0];
+    UString rootArcPath = rootArc.ParentFolderPath + rootArc.RelPath;
+    skipLen = rootArcPath.Len();
+    if (_currentFolderPrefix.Len() > skipLen && IS_PATH_SEPAR(_currentFolderPrefix[skipLen]))
+      skipLen++;
+  }
+  else
+  {
+    prefix = GetFsPath();
+  }
+    
+  FOR_VECTOR (i, indices)
+  {
+    if (i != 0)
+      resultString += L"\r\n";
+    
+    if (skipLen > 0)
+    {
+       resultString += _currentFolderPrefix.Ptr(skipLen);
+    }
+    else
+    {
+       resultString += prefix;
+    }
+    resultString += GetItemRelPath(indices[i]);
+  }
+  ClipboardSetText(_mainWindow, resultString);
+}
+
+void CPanel::CopyArcPath()
+{
+  if (!_parentFolders.IsEmpty())
+  {
+    const CFolderLink &rootArc = _parentFolders[0];
+    UString path = rootArc.ParentFolderPath + rootArc.RelPath;
+    ClipboardSetText(_mainWindow, path);
+  }
+}
+
+void CPanel::OpenArcFolder()
+{
+  if (!_parentFolders.IsEmpty())
+  {
+    const CFolderLink &rootArc = _parentFolders[0];
+    UString dir = rootArc.ParentFolderPath;
+    if (dir.IsEmpty())
+      return;
+    
+    UString customExplorer;
+    ReadRegCustomExplorer(customExplorer);
+    if (!customExplorer.IsEmpty())
+    {
+      NWindows::CProcess process;
+      UString params = GetQuotedString(dir);
+      process.Create(customExplorer, params, NULL);
+    }
+    else
+    {
+       #ifndef UNDER_CE
+       ::ShellExecuteW(NULL, L"explore", dir, NULL, NULL, SW_SHOWNORMAL);
+       #endif
+    }
+  }
 }
 
 void CPanel::EditPaste()
@@ -952,6 +1032,7 @@ void CPanel::CreateFileMenu(HMENU menuSpec,
   fm.readOnly = IsThereReadOnlyFolder();
   fm.isHashFolder = IsHashFolder();
   fm.isFsFolder = Is_IO_FS_Folder();
+  fm.isArcFolder = IsArcFolder();
   fm.programMenu = programMenu;
   fm.allAreFiles = (firstDirIndex == -1);
   fm.numItems = operatedIndices.Size();
