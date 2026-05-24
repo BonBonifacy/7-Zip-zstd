@@ -102,7 +102,7 @@ static bool GetSingleRootFolder(IInArchive *archive, const CArc &arc, UString &r
     }
     else
     {
-      if (rootFolder.CompareNoCase(firstComponent) != 0)
+      if (MyStringCompareNoCase(rootFolder, firstComponent) != 0)
       {
         return false;
       }
