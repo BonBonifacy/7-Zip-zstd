@@ -33,6 +33,86 @@ static void SetErrorMessage(const char *message,
 }
 
 
+static bool GetSingleRootFolder(IInArchive *archive, const CArc &arc, UString &rootFolder)
+{
+  UInt32 numItems;
+  if (archive->GetNumberOfItems(&numItems) != S_OK)
+    return false;
+
+  rootFolder.Empty();
+  bool hasRootFolder = false;
+
+  CReadArcItem item;
+  for (UInt32 i = 0; i < numItems; i++)
+  {
+    #ifdef SUPPORT_ALT_STREAMS
+    bool isAltStream = false;
+    if (arc.Ask_AltStream)
+    {
+      if (Archive_IsItem_AltStream(arc.Archive, i, isAltStream) == S_OK && isAltStream)
+        continue;
+    }
+    #endif
+
+    if (arc.GetItem(i, item) != S_OK)
+      return false;
+
+    const UString &path =
+      #ifdef SUPPORT_ALT_STREAMS
+        item.MainPath;
+      #else
+        item.Path;
+      #endif
+
+    if (path.IsEmpty())
+      continue;
+
+    int slashPos = path.Find(L'\\');
+    int slashPos2 = path.Find(L'/');
+    int pos = -1;
+    if (slashPos >= 0 && slashPos2 >= 0)
+      pos = (slashPos < slashPos2) ? slashPos : slashPos2;
+    else if (slashPos >= 0)
+      pos = slashPos;
+    else
+      pos = slashPos2;
+
+    UString firstComponent;
+    if (pos >= 0)
+      firstComponent = path.Left(pos);
+    else
+    {
+      if (item.MainIsDir)
+      {
+        firstComponent = path;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+    if (firstComponent.IsEmpty())
+      continue;
+
+    if (!hasRootFolder)
+    {
+      rootFolder = firstComponent;
+      hasRootFolder = true;
+    }
+    else
+    {
+      if (rootFolder.CompareNoCase(firstComponent) != 0)
+      {
+        return false;
+      }
+    }
+  }
+
+  return hasRootFolder && !rootFolder.IsEmpty();
+}
+
+
 static HRESULT DecompressArchive(
     CCodecs *codecs,
     const CArchiveLink &arcLink,
@@ -83,7 +163,18 @@ static HRESULT DecompressArchive(
       if (!elimPrefix.IsEmpty())
       {
         outDirReduced = us2fs(dirPrefix);
-        elimIsPossible = true;
+        
+        UString rootFolder;
+        if (GetSingleRootFolder(archive, arc, rootFolder))
+        {
+          elimPrefix = rootFolder;
+          outDir = us2fs(dirPrefix + rootFolder);
+          elimIsPossible = true;
+        }
+        else
+        {
+          elimIsPossible = true;
+        }
       }
     }
   }
