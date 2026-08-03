@@ -105,15 +105,15 @@ test regression--test-brotli-mt {7z regression test for with previous versions c
 	variable Z7_REGR_TEST_DIR
 	set ret {}
 	set p [file join $Z7_REGR_TEST_DIR test.txt.br-mt.br]
-	# by default mt is off, cover all possible variants of switches to force mt-on via cmd-line,
+	# by default mt is off, besides auto-detection, cover all possible variants of switches to force mt-on via cmd-line,
 	# especially with -mmt=1, -mmtd100 (-100) and -mmtp1d1 (1%-1) shall use brotli-mt decompression (even by single CPU to process):
-	foreach opt {-mmt -mmt+ -mmt=on -mmt=1 -mmtp100 -mmtu100 -mmtd100 -mmtp1d1} {
+	foreach opt {{} -mmt -mmt+ -mmt=on -mmt=1 -mmtp100 -mmtu100 -mmtd100 -mmtp1d1} {
 		7z t -scrcSHA256 {*}$opt -- $p
 		assertLogged "Everything is Ok"
 		lappend ret 1
 	}
 	set ret
-} [lrepeat 8 1]
+} [lrepeat 9 1]
 
 test regression--test-mt-option {7z regression test for with previous versions compressed files (7z, different mmt switches)} {
 	variable Z7_REGR_TEST_DIR
