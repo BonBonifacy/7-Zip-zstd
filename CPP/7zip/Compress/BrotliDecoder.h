@@ -60,6 +60,7 @@ public:
   UInt64 _processedOut;
   UInt32 _inputSize;
   UInt32 _numThreads;
+  bool   _numThreads_WasForced;
 
   HRESULT CodeSpec(ISequentialInStream *inStream, ISequentialOutStream *outStream, ICompressProgressInfo *progress);
   HRESULT CodeResume(ISequentialOutStream * outStream, const UInt64 * outSize, ICompressProgressInfo * progress);

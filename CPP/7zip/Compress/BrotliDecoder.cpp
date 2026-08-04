@@ -74,7 +74,8 @@ CDecoder::CDecoder():
   _processedIn(0),
   _processedOut(0),
   _inputSize(0),
-  _numThreads(NWindows::NSystem::GetNumberOfProcessors())
+  _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
+  _numThreads_WasForced(true) // mt-brotli in 7z container by default
 {
   _props.clear();
 }
@@ -97,13 +98,12 @@ Z7_COM7F_IMF(CDecoder::SetDecoderProperties2(const Byte * prop, UInt32 size))
 
 Z7_COM7F_IMF(CDecoder::SetNumberOfThreads(UInt32 numThreads))
 {
-  const UInt32 kNumThreadsMax = BROTLIMT_THREAD_MAX;
   // if single-threaded, retain artificial number set in BrotliHandler (always prefer .br format):
   if ((int)numThreads < 1) {
     numThreads = 0;
   }
   else
-  if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
+  if (numThreads > BROTLIMT_THREAD_MAX) numThreads = BROTLIMT_THREAD_MAX;
   _numThreads = numThreads;
   return S_OK;
 }
@@ -145,7 +145,7 @@ HRESULT CDecoder::CodeSpec(ISequentialInStream * inStream,
   rdwr.arg_write = (void *)&Wr;
 
   /* 2) create decompression context */
-  BROTLIMT_DCtx *ctx = BROTLIMT_createDCtx(_numThreads, _inputSize);
+  BROTLIMT_DCtx *ctx = BROTLIMT_createDCtx(_numThreads, _numThreads_WasForced, _inputSize);
   if (!ctx)
       return S_FALSE;
 

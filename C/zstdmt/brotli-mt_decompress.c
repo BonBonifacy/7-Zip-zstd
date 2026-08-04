@@ -52,6 +52,7 @@ struct BROTLIMT_DCtx_s {
 
 	/* threads: 0, 1..BROTLIMT_THREAD_MAX */
 	int threads;
+	int threadsset;
 
 	/* should be used for read from input */
 	size_t inputsize;
@@ -85,7 +86,7 @@ struct BROTLIMT_DCtx_s {
  * Decompression
  ****************************************/
 
-BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int inputsize)
+BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int threadsset, int inputsize)
 {
 	BROTLIMT_DCtx *ctx;
 	int t;
@@ -96,11 +97,14 @@ BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int inputsize)
 		return 0;
 
 	/* check threads value */
-	if (threads < 0 || threads > BROTLIMT_THREAD_MAX)
+	if (!threadsset && threads > BROTLIMT_THREAD_MAX)
+		threads = BROTLIMT_THREAD_MAX;
+	if ((threads < 0 || threads > BROTLIMT_THREAD_MAX))
 		return 0;
 
 	/* setup ctx */
 	ctx->threads = threads;
+	ctx->threadsset = threadsset;
 	ctx->insize = 0;
 	ctx->outsize = 0;
 	ctx->frames = 0;
@@ -125,7 +129,7 @@ BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int inputsize)
 	INIT_LIST_HEAD(&ctx->writelist_busy);
 	INIT_LIST_HEAD(&ctx->writelist_done);
 
-	if (!threads)
+	if (threads <= 1)
 		threads = 1;
 
 	ctx->cwork = (cwork_t *) malloc(sizeof(cwork_t) * threads);
@@ -572,7 +576,12 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	if (rv != 0)
 		return mt_error(rv);
 
-	if (in->size != 4 || MEM_readLE32(buf) != BROTLIMT_MAGIC_SKIPPABLE) {
+	if (
+		!ctx->threads ||       /* force single-threaded */
+		(!ctx->threadsset && ( /* no threads specified - auto detection */
+			in->size != 4 || MEM_readLE32(buf) != BROTLIMT_MAGIC_SKIPPABLE
+		))
+	) {
 		/* raw single threaded brotli stream (no header, no mt-frames):
 		   hand back whatever bytes we already consumed above. */
 		return st_decompress(ctx, buf, in->size);
@@ -586,7 +595,7 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	 * BROTLIMT_createDCtx() now, so this promotion is safe even when the
 	 * context was originally created with threads==0.
 	 */
-	if (ctx->threads == 0)
+	if (ctx->threads <= 0)
 		ctx->threads = 1;
 
 	/* mark unused */
