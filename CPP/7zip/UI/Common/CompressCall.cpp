@@ -285,6 +285,20 @@ HRESULT CompressFiles(
         params += temp;
       }
 
+      /* the "Memory usage" limit of the dialog. CCompressDialog stores it as
+         the spec string that CMemUse::Parse() understands ("70%", "2G", ...),
+         and as an empty string for the default entry. The dialog sends the
+         same limit as the "memuse" property, only spelled differently: it
+         re-serializes the parsed value, so an absolute limit goes out as
+         "<bytes>b" (SetOutProperties() / AddProp_Size() in UpdateGUI.cpp).
+         Both spellings reach the same ParseSizeString(), so forwarding the
+         stored string is equivalent. */
+      if (!fo.MemUse.IsEmpty())
+      {
+        params += " -mmemuse=";
+        params += fo.MemUse;
+      }
+
       if (!fo.Options.IsEmpty())
       {
         UStringVector strings;
