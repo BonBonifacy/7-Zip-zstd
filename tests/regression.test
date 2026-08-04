@@ -115,6 +115,29 @@ test regression--test-brotli-mt {7z regression test for with previous versions c
 	set ret
 } [lrepeat 9 1]
 
+test regression--test-brotli-st-with-mt {7z regression test for with previous versions compressed files (brotli-st, but specified mt)} -body {
+	variable Z7_REGR_TEST_DIR
+	set ret {}
+	set p [file join $Z7_REGR_TEST_DIR test.txt.br]
+	# test of stream created with st-brotli must fail decompressing with mt-brotli:
+	foreach opt {-mmt -mmt+ -mmt=on -mmt=1 -mmtp100 -mmtu100 -mmtd100 -mmtp1d1} {
+		lappend ret [catch {7z t -scrcSHA256 {*}$opt -- $p} res] $res
+	}
+	set ret
+} -match glob -result [lrepeat 8 1 "*ERROR: *Unspecified error*"]
+
+test regression--test-brotli-mt-with-st {7z regression test for with previous versions compressed files (brotli-mt, but specified st)} -body {
+	variable Z7_REGR_TEST_DIR
+	set ret {}
+	set p [file join $Z7_REGR_TEST_DIR test.txt.br-mt.br]
+	# test of stream created with mt-brotli must fail decompressing with st-brotli:
+	foreach opt {-mmt- -mmt=off -mmt=0} {
+		lappend ret [catch {7z t -scrcSHA256 {*}$opt -- $p} res] $res
+	}
+	set ret
+} -match glob -result [lrepeat 3 1 "*ERROR: *Unspecified error*"]
+
+
 test regression--test-mt-option {7z regression test for with previous versions compressed files (7z, different mmt switches)} {
 	variable Z7_REGR_TEST_DIR
 	set ret {}
