@@ -145,7 +145,7 @@ test regression--test-mt-option {7z regression test for with previous versions c
 	foreach p [lsort -dictionary [glob -directory $Z7_REGR_TEST_DIR test.txt.*]] {
 		if {![regexp {\.txt(?:\.(?:br|zstd))?\.7z$} $p]} continue
 		set i 0
-		foreach opt {-m0=:mt- -m0=:mtoff -m0=:mt0 -m0=:mt -m0=:mt+ -m0=:mton -m0=:mt1 -m0=:mtp100 -m0=:mt0u100 -m0=:mtd2 -m0=:mtp1+1} {
+		foreach opt {-mmt- -mmt=off -mmt=0 -m0=:mt- -m0=:mtoff -m0=:mt0 -m0=:mt -m0=:mt+ -m0=:mton -m0=:mt1 -m0=:mtp100 -m0=:mt0u100 -m0=:mtd2 -m0=:mtp1+1} {
 			7z t {*}$opt -- $p
 			assertLogged "Everything is Ok"
 			incr i
@@ -154,9 +154,9 @@ test regression--test-mt-option {7z regression test for with previous versions c
 	}
 	join $ret \n
 } [join {
-	{test.txt.7z 11}
-	{test.txt.br.7z 11}
-	{test.txt.zstd.7z 11}
+	{test.txt.7z 14}
+	{test.txt.br.7z 14}
+	{test.txt.zstd.7z 14}
 } \n]
 
 set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]

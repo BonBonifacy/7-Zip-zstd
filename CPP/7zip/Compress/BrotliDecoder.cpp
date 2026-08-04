@@ -75,7 +75,7 @@ CDecoder::CDecoder():
   _processedOut(0),
   _inputSize(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
-  _numThreads_WasForced(true) // mt-brotli in 7z container by default
+  _numThreads_WasForced(false) // mt-brotli in 7z container, st-brotli in .br by default
 {
   _props.clear();
 }
