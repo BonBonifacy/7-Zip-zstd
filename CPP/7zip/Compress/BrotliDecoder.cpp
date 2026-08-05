@@ -76,6 +76,12 @@ CDecoder::CDecoder():
   _inputSize(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors())
 {
+  // GetNumberOfProcessors() is uncapped and sums all processor groups, while
+  // BROTLIMT_createDCtx() only accepts up to BROTLIMT_THREAD_MAX.
+  // BrotliHandler does call SetNumberOfThreads(), but the default has to be
+  // valid on its own.
+  if (_numThreads > (UInt32)BROTLIMT_THREAD_MAX)
+    _numThreads = (UInt32)BROTLIMT_THREAD_MAX;
   _props.clear();
 }
 

@@ -90,13 +90,13 @@ BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int inputsize)
 	BROTLIMT_DCtx *ctx;
 	int t;
 
+	/* check threads value */
+	if (threads < 0 || threads > BROTLIMT_THREAD_MAX)
+		return 0;
+
 	/* allocate ctx */
 	ctx = (BROTLIMT_DCtx *) malloc(sizeof(BROTLIMT_DCtx));
 	if (!ctx)
-		return 0;
-
-	/* check threads value */
-	if (threads < 0 || threads > BROTLIMT_THREAD_MAX)
 		return 0;
 
 	/* setup ctx */
@@ -331,7 +331,6 @@ static void *pt_decompress(void *arg)
 		/* zero should not happen here! */
 		result = pt_read(ctx, in, &wl->frame, &wl->out.size);
 		if (BROTLIMT_isError(result)) {
-			list_move(&wl->node, &ctx->writelist_free);
 			goto error_lock;
 		}
 
