@@ -52,6 +52,7 @@ struct BROTLIMT_DCtx_s {
 
 	/* threads: 0, 1..BROTLIMT_THREAD_MAX */
 	int threads;
+	int threadsset;
 
 	/* should be used for read from input */
 	size_t inputsize;
@@ -70,6 +71,11 @@ struct BROTLIMT_DCtx_s {
 	fn_read *fn_read;
 	void *arg_read;
 
+	/* frame skippable header, frame 0 read by BROTLIMT_decompressDCtx() before
+	   the container path was taken, so pt_read() does not read those bytes
+	   a second time. Also used in pt_read() to read header of next frames. */
+	unsigned char hdrbuf[16];
+
 	/* writing output */
 	pthread_mutex_t write_mutex;
 	fn_write *fn_write;
@@ -85,13 +91,15 @@ struct BROTLIMT_DCtx_s {
  * Decompression
  ****************************************/
 
-BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int inputsize)
+BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int threadsset, int inputsize)
 {
 	BROTLIMT_DCtx *ctx;
 	int t;
 
 	/* check threads value */
-	if (threads < 0 || threads > BROTLIMT_THREAD_MAX)
+	if (!threadsset && threads > BROTLIMT_THREAD_MAX)
+		threads = BROTLIMT_THREAD_MAX;
+	if ((threads < 0 || threads > BROTLIMT_THREAD_MAX))
 		return 0;
 
 	/* allocate ctx */
@@ -101,6 +109,7 @@ BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int inputsize)
 
 	/* setup ctx */
 	ctx->threads = threads;
+	ctx->threadsset = threadsset;
 	ctx->insize = 0;
 	ctx->outsize = 0;
 	ctx->frames = 0;
@@ -125,7 +134,7 @@ BROTLIMT_DCtx *BROTLIMT_createDCtx(int threads, int inputsize)
 	INIT_LIST_HEAD(&ctx->writelist_busy);
 	INIT_LIST_HEAD(&ctx->writelist_done);
 
-	if (!threads)
+	if (threads <= 1)
 		threads = 1;
 
 	ctx->cwork = (cwork_t *) malloc(sizeof(cwork_t) * threads);
@@ -195,28 +204,20 @@ static size_t pt_write(BROTLIMT_DCtx * ctx, struct writelist *wl)
  */
 static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame, size_t * uncompressed)
 {
-	unsigned char hdrbuf[16];
 	BROTLIMT_Buffer hdr;
 	int rv;
 
-	/* read skippable frame (12 or 16 bytes) */
+	/* handle skippable frame (16 bytes) */
 	pthread_mutex_lock(&ctx->read_mutex);
+	hdr.buf = ctx->hdrbuf;
+	hdr.size = 16;
 
-	/* special case, first 4 bytes already read */
-	if (ctx->frames == 0) {
-		hdr.buf = hdrbuf + 4;
-		hdr.size = 12;
-		rv = ctx->fn_read(ctx->arg_read, &hdr);
-		if (rv != 0) {
-			pthread_mutex_unlock(&ctx->read_mutex);
-			return mt_error(rv);
-		}
-		if (hdr.size != 12)
-			goto error_read;
-		hdr.buf = hdrbuf;
-	} else {
-		hdr.buf = hdrbuf;
-		hdr.size = 16;
+	/* special case: frame 0's header was already read by
+	   BROTLIMT_decompressDCtx(); its fixed fields are still checked below,
+	   which is what covers the forced-container path (that one stores the
+	   header without looking at them) */
+	if (ctx->frames != 0) {
+		
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
 		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
@@ -230,27 +231,26 @@ static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame,
 		}
 		if (hdr.size != 16)
 			goto error_read;
-		if (MEM_readLE32((unsigned char *)hdr.buf + 0) !=
-		    BROTLIMT_MAGIC_SKIPPABLE)
+		if (MEM_readLE32(hdr.buf) != BROTLIMT_MAGIC_SKIPPABLE)
+			goto error_data;
+
+		/* check header data */
+		if (MEM_readLE32((char *)hdr.buf + 4) != 8)
+			goto error_data;
+		if (MEM_readLE16((char *)hdr.buf + 12) != BROTLIMT_MAGICNUMBER)
 			goto error_data;
 	}
 
-	/* check header data */
-	if (MEM_readLE32((unsigned char *)hdr.buf + 4) != 8)
-		goto error_data;
-	if (MEM_readLE16((unsigned char *)hdr.buf + 12) != BROTLIMT_MAGICNUMBER)
-		goto error_data;
-
 	/* get uncompressed size for output buffer */
 	{
-		U16 hintsize = MEM_readLE16((unsigned char *)hdr.buf + 14);
+		U16 hintsize = MEM_readLE16((char *)hdr.buf + 14);
 		*uncompressed = hintsize << 16;
 	}
 
 	ctx->insize += 16;
 	/* read new inputsize */
 	{
-		size_t toRead = MEM_readLE32((unsigned char *)hdr.buf + 8);
+		size_t toRead = MEM_readLE32((char *)hdr.buf + 8);
 		if (in->allocated < toRead) {
 			/* need bigger input buffer */
 			if (in->allocated)
@@ -382,7 +382,7 @@ static void *pt_decompress(void *arg)
 /*
  * st_prime_input - seed @in with the @prefixSize bytes already consumed
  * from the stream by BROTLIMT_decompressDCtx() while probing for the
- * brotli-mt container magic, then top up with a fresh read for the rest
+ * brotli-mt container header, then top up with a fresh read for the rest
  * of the buffer. Called once, before st_decompress()'s main loop starts,
  * so this priming logic does not add to that loop's complexity. Mirrors
  * the "we have read already 4 bytes" prefix handling in LZ4MT
@@ -460,7 +460,7 @@ static size_t st_decompress(BROTLIMT_DCtx *ctx, const unsigned char *prefix, siz
 
 	/* allocate space for input buffer; must be able to hold at least the
 	   already-consumed prefix bytes, in case ctx->inputsize was configured
-	   smaller than prefixSize (prefixSize is at most 4 today) */
+	   smaller than prefixSize (prefixSize is at most 16 today) */
 	if (allocSize < prefixSize)
 		allocSize = prefixSize;
 	in->allocated = allocSize;
@@ -530,7 +530,6 @@ static size_t st_decompress(BROTLIMT_DCtx *ctx, const unsigned char *prefix, siz
 
 size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 {
-	unsigned char buf[4];
 	int t, rv;
 	cwork_t *w = &ctx->cwork[0];
 	BROTLIMT_Buffer *in = &w->in;
@@ -546,35 +545,53 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	ctx->arg_write = rdwr->arg_write;
 
 	/*
-	 * Always peek the first 4 bytes and check for BROTLIMT_MAGIC_SKIPPABLE,
-	 * regardless of the caller-requested thread count (ctx->threads), so
-	 * that raw-vs-mt-container decoding depends on the *file content*
-	 * instead of whether -mmt was passed for *this* invocation. This
-	 * mirrors what e.g. LZ4MT_decompressDCtx() already does for lz4/lz5/
-	 * lizard in this same directory (see lz4-mt_decompress.c): it always
-	 * reads the first 4 bytes and compares against the format's own
-	 * skippable-frame magic before deciding which path to take.
+	 * Decide raw-vs-mt-container from the *file content* instead of from
+	 * whether -mmt was passed for *this* invocation, by peeking frame 0's
+	 * complete 16 byte skippable header and requiring all three of its
+	 * fixed fields to match:
 	 *
-	 * Unlike lz4/lz5/lizard, raw Brotli has no signature of its own, so a
-	 * 4-byte match alone carries a residual false-positive risk (a raw
-	 * stream could coincidentally start with these exact bytes), on the
-	 * order of 2^-32 - the same order of magnitude already accepted here
-	 * for lz4/lz5/lizard's skippable-frame magic check. If frame 0's
-	 * header then fails the additional field checks already done in
-	 * pt_read() (offset +4 == 8, offset +12 == BROTLIMT_MAGICNUMBER),
-	 * decoding fails with a data error instead of silently misinterpreting
-	 * the stream.
+	 *   +0  BROTLIMT_MAGIC_SKIPPABLE   (32 bits)
+	 *   +4  skippable frame size == 8  (32 bits)
+	 *   +12 BROTLIMT_MAGICNUMBER       (16 bits)
+	 *
+	 * Raw Brotli has no signature of its own, so this is the only thing
+	 * separating the two formats. These are not new checks: the +4 and +12
+	 * fields were already validated in pt_read(), just *after* the branch
+	 * had been taken, which turned a misdetected raw stream into a data
+	 * error. Validating all 80 bits up front instead turns that same case
+	 * back into a normal raw decode.
+	 *
+	 * A stream shorter than 16 bytes cannot be a container either: it is
+	 * decoded as raw, or rejected if the container path was forced. Every
+	 * probed byte is handed back to the raw decoder intact, so nothing is
+	 * consumed by probing.
 	 */
-	in->buf = buf;
-	in->size = 4;
+	in->buf = ctx->hdrbuf;
+	in->size = 16;
 	rv = ctx->fn_read(ctx->arg_read, in);
 	if (rv != 0)
 		return mt_error(rv);
 
-	if (in->size != 4 || MEM_readLE32(buf) != BROTLIMT_MAGIC_SKIPPABLE) {
+	/* A container header is exactly 16 bytes, so a shorter stream cannot be
+	   one no matter what was requested. This has to be checked before the
+	   branch below, because the forced-container path deliberately skips the
+	   field checks and would otherwise trust a partially filled buffer -
+	   pt_read() no longer re-reads frame 0's header and so cannot catch it
+	   either. Forcing mt on a stream this short is the same "you asked for a
+	   container and there is none" case pt_read() used to report. */
+
+	if (
+		(ctx->threadsset && !ctx->threads) || /* force single-threaded */
+		(!ctx->threadsset && ( /* no threads specified - auto detection */
+			in->size != 16 ||
+			MEM_readLE32(ctx->hdrbuf) != BROTLIMT_MAGIC_SKIPPABLE ||
+			MEM_readLE32(ctx->hdrbuf + 4) != 8 ||
+			MEM_readLE16(ctx->hdrbuf + 12) != BROTLIMT_MAGICNUMBER
+		))
+	) {
 		/* raw single threaded brotli stream (no header, no mt-frames):
 		   hand back whatever bytes we already consumed above. */
-		return st_decompress(ctx, buf, in->size);
+		return st_decompress(ctx, in->buf, in->size);
 	}
 
 	/*
@@ -585,7 +602,7 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	 * BROTLIMT_createDCtx() now, so this promotion is safe even when the
 	 * context was originally created with threads==0.
 	 */
-	if (ctx->threads == 0)
+	if (ctx->threads <= 0)
 		ctx->threads = 1;
 
 	/* mark unused */
