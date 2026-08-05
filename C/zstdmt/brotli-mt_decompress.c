@@ -71,12 +71,10 @@ struct BROTLIMT_DCtx_s {
 	fn_read *fn_read;
 	void *arg_read;
 
-	/* frame 0's skippable header, read by BROTLIMT_decompressDCtx() before
+	/* frame skippable header, frame 0 read by BROTLIMT_decompressDCtx() before
 	   the container path was taken, so pt_read() does not read those bytes
-	   a second time. Auto-detection has already checked its fixed fields;
-	   the forced-container path stores them unchecked, so pt_read() must
-	   keep checking them for frame 0 too. */
-	unsigned char hdr0[16];
+	   a second time. Also used in pt_read() to read header of next frames. */
+	unsigned char hdrbuf[16];
 
 	/* writing output */
 	pthread_mutex_t write_mutex;
@@ -206,24 +204,20 @@ static size_t pt_write(BROTLIMT_DCtx * ctx, struct writelist *wl)
  */
 static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame, size_t * uncompressed)
 {
-	unsigned char hdrbuf[16];
 	BROTLIMT_Buffer hdr;
 	int rv;
 
-	/* read skippable frame (16 bytes) */
+	/* handle skippable frame (16 bytes) */
 	pthread_mutex_lock(&ctx->read_mutex);
+	hdr.buf = ctx->hdrbuf;
+	hdr.size = 16;
 
 	/* special case: frame 0's header was already read by
 	   BROTLIMT_decompressDCtx(); its fixed fields are still checked below,
 	   which is what covers the forced-container path (that one stores the
 	   header without looking at them) */
-	if (ctx->frames == 0) {
-		memcpy(hdrbuf, ctx->hdr0, 16);
-		hdr.buf = hdrbuf;
-		hdr.size = 16;
-	} else {
-		hdr.buf = hdrbuf;
-		hdr.size = 16;
+	if (ctx->frames != 0) {
+		
 		rv = ctx->fn_read(ctx->arg_read, &hdr);
 		if (rv != 0) {
 			pthread_mutex_unlock(&ctx->read_mutex);
@@ -237,27 +231,26 @@ static size_t pt_read(BROTLIMT_DCtx * ctx, BROTLIMT_Buffer * in, size_t * frame,
 		}
 		if (hdr.size != 16)
 			goto error_read;
-		if (MEM_readLE32((unsigned char *)hdr.buf + 0) !=
-		    BROTLIMT_MAGIC_SKIPPABLE)
+		if (MEM_readLE32(hdr.buf) != BROTLIMT_MAGIC_SKIPPABLE)
+			goto error_data;
+
+		/* check header data */
+		if (MEM_readLE32((char *)hdr.buf + 4) != 8)
+			goto error_data;
+		if (MEM_readLE16((char *)hdr.buf + 12) != BROTLIMT_MAGICNUMBER)
 			goto error_data;
 	}
 
-	/* check header data */
-	if (MEM_readLE32((unsigned char *)hdr.buf + 4) != 8)
-		goto error_data;
-	if (MEM_readLE16((unsigned char *)hdr.buf + 12) != BROTLIMT_MAGICNUMBER)
-		goto error_data;
-
 	/* get uncompressed size for output buffer */
 	{
-		U16 hintsize = MEM_readLE16((unsigned char *)hdr.buf + 14);
+		U16 hintsize = MEM_readLE16((char *)hdr.buf + 14);
 		*uncompressed = hintsize << 16;
 	}
 
 	ctx->insize += 16;
 	/* read new inputsize */
 	{
-		size_t toRead = MEM_readLE32((unsigned char *)hdr.buf + 8);
+		size_t toRead = MEM_readLE32((char *)hdr.buf + 8);
 		if (in->allocated < toRead) {
 			/* need bigger input buffer */
 			if (in->allocated)
@@ -538,7 +531,6 @@ static size_t st_decompress(BROTLIMT_DCtx *ctx, const unsigned char *prefix, siz
 
 size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 {
-	unsigned char buf[16];
 	int t, rv;
 	cwork_t *w = &ctx->cwork[0];
 	BROTLIMT_Buffer *in = &w->in;
@@ -575,7 +567,7 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	 * probed byte is handed back to the raw decoder intact, so nothing is
 	 * consumed by probing.
 	 */
-	in->buf = buf;
+	in->buf = ctx->hdrbuf;
 	in->size = 16;
 	rv = ctx->fn_read(ctx->arg_read, in);
 	if (rv != 0)
@@ -588,31 +580,20 @@ size_t BROTLIMT_decompressDCtx(BROTLIMT_DCtx * ctx, BROTLIMT_RdWr_t * rdwr)
 	   pt_read() no longer re-reads frame 0's header and so cannot catch it
 	   either. Forcing mt on a stream this short is the same "you asked for a
 	   container and there is none" case pt_read() used to report. */
-	if (in->size != 16) {
-		if (ctx->threadsset && ctx->threads)
-			return MT_ERROR(read_fail);
-		return st_decompress(ctx, buf, in->size);
-	}
 
 	if (
 		(ctx->threadsset && !ctx->threads) || /* force single-threaded */
 		(!ctx->threadsset && ( /* no threads specified - auto detection */
-			MEM_readLE32(buf + 0) != BROTLIMT_MAGIC_SKIPPABLE
-			|| MEM_readLE32(buf + 4) != 8
-			|| MEM_readLE16(buf + 12) != BROTLIMT_MAGICNUMBER
+			in->size != 16 ||
+			MEM_readLE32(ctx->hdrbuf) != BROTLIMT_MAGIC_SKIPPABLE ||
+			MEM_readLE32(ctx->hdrbuf + 4) != 8 ||
+			MEM_readLE16(ctx->hdrbuf + 12) != BROTLIMT_MAGICNUMBER
 		))
 	) {
 		/* raw single threaded brotli stream (no header, no mt-frames):
 		   hand back whatever bytes we already consumed above. */
-		return st_decompress(ctx, buf, in->size);
+		return st_decompress(ctx, in->buf, in->size);
 	}
-
-	/* Hand frame 0's header to pt_read() rather than have it read those
-	   bytes again. Reached either from auto-detection, which has just
-	   validated the three fixed fields, or from a forced container path,
-	   which by design skips them - pt_read() checks them for frame 0
-	   either way, so do not drop its checks on the strength of this. */
-	memcpy(ctx->hdr0, buf, 16);
 
 	/*
 	 * brotli-mt container detected: make sure we actually use the
