@@ -75,7 +75,7 @@ CDecoder::CDecoder():
   _processedOut(0),
   _inputSize(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
-  _numThreads_WasForced(false) // mt-brotli in 7z container, st-brotli in .br by default
+  _numThreads_WasForced(-1) // mt-brotli in 7z container, st-brotli in .br by default (overwritten in CHandler::Extract)
 {
   // GetNumberOfProcessors() is uncapped and sums all processor groups, while
   // BROTLIMT_createDCtx() only accepts up to BROTLIMT_THREAD_MAX.
@@ -111,6 +111,9 @@ Z7_COM7F_IMF(CDecoder::SetNumberOfThreads(UInt32 numThreads))
   else
   if (numThreads > BROTLIMT_THREAD_MAX) numThreads = BROTLIMT_THREAD_MAX;
   _numThreads = numThreads;
+  // if 7z container - shall be mt-brotli:
+  if (_numThreads_WasForced == -1 && numThreads <= 0)
+    _numThreads = 1;
   return S_OK;
 }
 
