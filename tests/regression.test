@@ -162,6 +162,22 @@ test regression--test-mt-option {7z regression test for with previous versions c
 set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 file mkdir $tmpdir
 
+test regression--test-brotli-mt-within-7z {7z regression test for brotli-mt in 7z container with and without threads)} -body {
+	set ret {}
+	set p [file join $tmpdir test-mt-br.7z]
+	# test of brotli within 7z must be always mt-brotli (must succeed decompressing regardless thread count):
+	foreach opt {{} -mmt=off -mmt=on -mmt=1} {
+		7z a -t7z -m0=brotli {*}$opt -si $p << "This is a test string passed to stdin"
+		foreach dopt {{} -mmt=on -mmt=off -mmt=1} {
+			lappend ret [list "$opt --> $dopt" [catch {
+				7z e -t7z {*}$dopt -so $p
+			} res] [string trim $res]]
+		}
+		file delete $p
+	}
+	join $ret \n
+} -match glob -result [join [lrepeat 16 [list "* --> *" 0 "This is a test string passed to stdin"]] \n]
+
 test regression--list-tech-info {7z regression test for with previous versions compressed files, list with technical info} {
 	variable Z7_REGR_TEST_DIR
 	variable Z7_PWD
