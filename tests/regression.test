@@ -159,6 +159,19 @@ test regression--test-mt-option {7z regression test for with previous versions c
 	{test.txt.zstd.7z 14}
 } \n]
 
+test regression--test-brotli-st-within-7z {7z regression test for with previous versions compressed files (brotli-st in 7z)} -body {
+	variable Z7_REGR_TEST_DIR
+	set ret {}
+	set p [file join $Z7_REGR_TEST_DIR err/test.txt.br-st.7z]
+	# test of mistakenly created st-brotli within 7z (must succeed decompressing by -mmt=off):
+	foreach opt {-mmt- -mmt=off -mmt=0} {
+		7z t -scrcSHA256 {*}$opt -- $p
+		assertLogged "Everything is Ok"
+		lappend ret 1
+	}
+	set ret
+} -result [lrepeat 3 1]
+
 set tmpdir [file join [temporaryDirectory] 7z-test-[format %x-%lx [pid] [clock microseconds]]]
 file mkdir $tmpdir
 
