@@ -202,7 +202,7 @@ Z7_COM7F_IMF(CHandler::Extract(const UInt32 *indices, UInt32 numItems,
    * when -mmt is not given on this extract/test invocation. Forcing a
    * mode or count via -mmt is still possible and would win over auto detection.
    */
-  decoderSpec->_numThreads_WasForced = _props._numThreads_WasForced;
+  decoderSpec->_numThreads_WasForced = _props._numThreads_WasForced ? 1 : 0;
   if (_props._numThreads_WasForced) {
     decoderSpec->SetNumberOfThreads(_props._numThreads);
   }
@@ -293,6 +293,7 @@ static HRESULT UpdateArchive(
   localProgressSpec->Init(updateCallback, true);
   NCompress::NBROTLI::CEncoder *encoderSpec = new NCompress::NBROTLI::CEncoder;
   encoderSpec->unpackSize = unpackSize;
+  encoderSpec->_numThreads_WasForced = 1;
   encoderSpec->SetNumberOfThreads(0); /* .br - single threaded processing (without header/mt-frames) */
   CMyComPtr<ICompressCoder> encoder = encoderSpec;
   RINOK(props.SetCoderProps(encoderSpec, NULL));

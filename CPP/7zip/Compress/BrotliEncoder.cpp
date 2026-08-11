@@ -13,6 +13,7 @@ CEncoder::CEncoder():
   _processedOut(0),
   _inputSize(0),
   _numThreads(NWindows::NSystem::GetNumberOfProcessors()),
+  _numThreads_WasForced(-1), // mt-brotli in 7z container, st-brotli in .br by default (overwritten in UpdateArchive)
   _Long(-1),
   _WindowLog(-1),
   unpackSize(0),
@@ -171,14 +172,16 @@ Z7_COM7F_IMF(CEncoder::Code(ISequentialInStream *inStream,
 
 Z7_COM7F_IMF(CEncoder::SetNumberOfThreads(UInt32 numThreads))
 {
-  const UInt32 kNumThreadsMax = BROTLIMT_THREAD_MAX;
   // if single-threaded, retain artificial number set in BrotliHandler (always prefer .br format):
   if ((int)numThreads < 1) {
     numThreads = 0;
   }
   else
-  if (numThreads > kNumThreadsMax) numThreads = kNumThreadsMax;
+  if (numThreads > BROTLIMT_THREAD_MAX) numThreads = BROTLIMT_THREAD_MAX;
   _numThreads = numThreads;
+  // if 7z container - shall be mt-brotli:
+  if (_numThreads_WasForced == -1 && numThreads <= 0)
+    _numThreads = 1;
   return S_OK;
 }
 
