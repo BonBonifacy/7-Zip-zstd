@@ -38,10 +38,10 @@ jobs:
         CC="gcc" CXX="g++" OUTDIR="$PWD/build-gcc" ./build-lx.sh
     - name: Test with clang binary
       run: |
-        Z7_PATH="CPP/build-clang/7z" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-clang/7z" tclsh tests/7z-test.tcl -verbose tsem
     - name: Test with gcc binary
       run: |
-        Z7_PATH="CPP/build-gcc/7z" tclsh tests/7z-test.tcl -verbose tpsem
+        Z7_PATH="CPP/build-gcc/7z" tclsh tests/7z-test.tcl -verbose tsem
     - name: Upload Build Artifacts (gcc)
       uses: actions/upload-artifact@v6
       with:
@@ -86,7 +86,8 @@ jobs:
         with:
           msbuild-architecture: ${{ matrix.arch }}
 
-      - name: Find vcvarsall path (to init Developer Command Prompt at compile phase)
+      - name: Find vcvarsall path
+        # init Developer Command Prompt at compile phase:
         shell: cmd
         run: |
           for /f "usebackq tokens=*" %%i in (`vswhere -latest -property installationPath`) do (
@@ -112,7 +113,13 @@ jobs:
       - name: Compiling ${{ matrix.arch }}
         shell: cmd
         run: |
-          call "%VCVARSALL_PATH%" ${{ matrix.arch }}
+          :: fallback to VS2022 for arm64 due to bug in VS2026
+          if not "${{ matrix.arch }}" == "arm64" (
+            call "%VCVARSALL_PATH%" ${{ matrix.arch }}
+          ) else (
+            echo [INFO] ARM64 target detected. Forcing Visual Studio 2022 toolset workaround...
+            call "%VCVARSALL_PATH%" ${{ matrix.arch }} -vcvars_ver=14.4
+          )
           set WDIR=%cd%
           set PLATFORM=${{matrix.platform}}
           set SUBSYS=${{matrix.subsys}}
@@ -149,7 +156,7 @@ jobs:
           set OUTDIR=build\bin-%PLATFORM%
           if "${{matrix.darkmode}}" == "" set OUTDIR=%OUTDIR%-ndm
           set Z7_PATH=%OUTDIR%\7z.exe
-          tclsh tests\7z-test.tcl -verbose tpsem
+          tclsh tests\7z-test.tcl -verbose tsem
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v6

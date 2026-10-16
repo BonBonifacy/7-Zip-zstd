@@ -119,6 +119,8 @@ typedef int WRes;
 #define ERROR_PATH_NOT_FOUND        ENOENT
 #define ERROR_FILE_NOT_FOUND        ENOENT
 #define ERROR_DISK_FULL             ENOSPC
+#define ERROR_HANDLE_EOF            EILSEQ
+#define ERROR_INVALID_DATA          EBADMSG
 // #define ERROR_INVALID_HANDLE        EBADF
 
 // we use FACILITY_WIN32 for errors that has no errno equivalent
@@ -559,6 +561,7 @@ struct ISzAlloc
 #define Z7_max(a,b) (((a)<(b))?(b):(a))
 
 #define Z7_memset_0_ARRAY(a)  memset((a), 0, sizeof(a))
+#define Z7_memset_0_VAR(a)  memset(&(a), 0, sizeof(a))
 
 #ifndef Z7_ARRAY_SIZE
 #define Z7_ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))

@@ -44,6 +44,7 @@ typedef enum {
   LZ5MT_error_read_fail,
   LZ5MT_error_write_fail,
   LZ5MT_error_data_error,
+  LZ5MT_error_end_of_data,
   LZ5MT_error_frame_compress,
   LZ5MT_error_frame_decompress,
   LZ5MT_error_compressionParameter_unsupported,
@@ -98,7 +99,7 @@ typedef struct LZ5MT_CCtx_s LZ5MT_CCtx;
  * 1) allocate new cctx
  * - return cctx or zero on error
  *
- * @level   - 1 .. 9
+ * @level   - LZ5MT_LEVEL_MIN .. LZ5MT_LEVEL_MAX
  * @threads - 1 .. LZ5MT_THREAD_MAX
  * @inputsize - if zero, becomes some optimal value for the level
  *            - if nonzero, the given value is taken

@@ -108,7 +108,7 @@ static void ConvertMethodIdToString(AString &res, UInt64 id)
 }
 
 
-static char *GetStringForSizeValue(char *s, UInt32 val)
+static char *GetStringForSizeValue(char *s Z7_lifetimebound, UInt32 val)
 {
   for (unsigned i = 0; i < 32; i++)
     if (((UInt32)1 << i) == val)
@@ -170,7 +170,7 @@ static inline void AddHexToString(UString &res, Byte value)
 }
 */
 
-static char *AddProp32(char *s, const char *name, UInt32 v)
+static char *AddProp32(char *s Z7_lifetimebound, const char *name, UInt32 v)
 {
   *s++ = ':';
   s = MyStpCpy(s, name);
@@ -307,8 +307,18 @@ bool CHandler::IsFolderEncrypted(CNum folderIndex) const
     for (unsigned j = 0; j < idSize; j++)
       id64 = ((id64 << 8) | longID[j]);
     inByte.SkipDataNoCheck(idSize);
-    if (id64 == k_AES)
+    if (id64 == k_AES
+        || id64 == k_XCHACHA20
+        || id64 == k_XCHACHA20_POLY1305
+        || id64 == k_AES_XCHACHA20_POLY1305
+        || id64 == k_AES_XCHACHA20_ASCON
+        || id64 == k_XCHACHA20_AES_AEGIS256)
       return true;
+    if ((mainByte & 0x10) != 0)
+    {
+      inByte.ReadNum(); // NumInStreams
+      inByte.ReadNum(); // NumOutStreams
+    }
     if ((mainByte & 0x20) != 0)
       inByte.SkipDataNoCheck(inByte.ReadNum());
   }
@@ -485,7 +495,7 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
             const UInt32 lp = d % 5;
             if (lc != 3) dest = AddProp32(dest, "lc", lc);
             if (lp != 0) dest = AddProp32(dest, "lp", lp);
-            if (pb != 2) dest = AddProp32(dest, "pb", pb);
+            if (pb != 2) /* dest = */ AddProp32(dest, "pb", pb);
           }
         }
         break;
@@ -699,6 +709,56 @@ HRESULT CHandler::ObtainBlockMethods(CNum folderIndex, PROPVARIANT *prop, CHandl
       case k_AES:
         if (info) continue;
         name = "7zAES";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_XCHACHA20:
+        if (info) continue;
+        name = "XChaCha20";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_XCHACHA20_POLY1305:
+        if (info) continue;
+        name = "XChaCha20-Poly1305";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_AES_XCHACHA20_ASCON:
+        if (info) continue;
+        name = "AES+XChaCha20+Ascon";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_AES_XCHACHA20_POLY1305:
+        if (info) continue;
+        name = "AES+XChaCha20-Poly1305";
+        if (propsSize >= 1)
+        {
+          const Byte firstByte = props[0];
+          const UInt32 numCyclesPower = firstByte & 0x3F;
+          ConvertUInt32ToString(numCyclesPower, s);
+        }
+        break;
+      case k_XCHACHA20_AES_AEGIS256:
+        if (info) continue;
+        name = "XChaCha20+AES+AEGIS";
         if (propsSize >= 1)
         {
           const Byte firstByte = props[0];
